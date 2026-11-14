@@ -424,12 +424,7 @@
     .wheel .gamut, :is(.wheel, .atlas-disc) .rim { fill: none; stroke: var(--muted); stroke-width: 0.003; pointer-events: none; }
     :is(.wheel, .atlas-disc) .rim { stroke-dasharray: 0.01 0.015; } /* the widest the slices go, for scale */
     .wheel .gamut { pointer-events: fill; cursor: pointer; } /* hovering the slice, off Wada's colours, shows its own colour */
-    .wheel-views:is([data-surface="smooth"], [data-surface="grid"]) .gamut { cursor: crosshair; } /* the colour exactly under the pointer */
-    .wheel .grid { fill: none; stroke: rgb(255 255 255 / 0.55); stroke-width: 0.0022; pointer-events: none; } /* smooth with cells: the squares' cells, over the slice */
-    .wheel-views:not([data-view="flat"]) .wheel-bg { opacity: 1; } /* in 2D, the slice's own colours, at full strength, as the panel shows them */
-    .wheel-views[data-surface="none"]:not([data-view="flat"]) .wheel-bg { display: none; } /* or none: only Wada's colours, in the slice's outline */
-    .wheel-views[data-surface="none"] .gamut { pointer-events: none; }
-    /* The Colors page's views (Create's picker keeps the rules above, by its surface): the background, OKLCH's own colours, as the switches say, smooth or each cell filled, on the canvas, at full strength or faded; the cells' borders a thin grey line, as the other systems' grids; the outline of what the range holds drawn in real space, round smooth, dots and none, and hovered on smooth (the colour exactly under the pointer) and the cells (that cell's colour), not on none (only Wada's colours) */
+    /* The views (the Colors page's and Create's picker's): the background, OKLCH's own colours, as the switches say, smooth or each cell filled, on the canvas, at full strength or faded; the cells' borders a thin grey line, as the other systems' grids; the outline of what the range holds drawn in real space, round smooth, dots and none, and hovered on smooth (the colour exactly under the pointer) and the cells (that cell's colour), not on none (only Wada's colours) */
     .wheel-views[data-bg] .wheel-bg { opacity: 1; }
     .wheel-views[data-bg][data-strength="faded"] .wheel-bg, .wheel-views[data-strength="faded"] .wheel :is(.cell-lines, .cell-dot) { opacity: 0.35; }
     .wheel-views:is([data-bg="griddot"], [data-bg="dots"], [data-bg="none"]) .wheel-bg { display: none; }
@@ -441,7 +436,6 @@
     /* Wada's colours, squares or dots, on any surface and in the flat wheel: their true colour, ringed white, then dark (.mark-halo, the same shape under it), with a small shadow, so that each reads as a mark on whatever is round it, as the Munsell and PCCS views' dots. */
     .wheel-views .wheel :is(.segment, .dot-mark) { stroke: rgb(255 255 255 / 0.95); stroke-width: 1.4px; vector-effect: non-scaling-stroke; }
     .wheel-views .wheel .halos { pointer-events: none; }
-    .picker .wheel-views .wheel .halos { filter: drop-shadow(0 0.6px 1px rgb(0 0 0 / 0.45)); } /* Create's picker: its shadow as before */
     :is(.wheel-views .wheel, .atlas-disc) .mark-halo { fill: none; stroke: rgb(0 0 0 / 0.7); stroke-width: 3.4px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
     :is(.wheel-views .wheel, .atlas-disc) .mark-halo.shadow { stroke: rgb(0 0 0); stroke-width: 5px; } /* the small shadow: the halo again, a little lower and wider, faint (a CSS filter on the group would tint the whole region it covers) */
     :is(.wheel-views .wheel, .atlas-disc) .shadows { opacity: 0.22; } /* faint as one: where the pieces' shadows overlap (at their corners), no darker */
@@ -3716,7 +3710,7 @@
       const halo = (el) => {
         if (!withViews) return;
         const shape = Object.fromEntries([...el.attributes].filter((a) => ["d", "cx", "cy", "r"].includes(a.name)).map((a) => [a.name, a.value]));
-        if (!picker) shadows.append(svgEl(el.tagName, { ...shape, class: "mark-halo shadow", transform: "translate(0 0.004)" }));
+        shadows.append(svgEl(el.tagName, { ...shape, class: "mark-halo shadow", transform: "translate(0 0.004)" }));
         halos.append(svgEl(el.tagName, { ...shape, class: "mark-halo" }));
       };
       const hide = () => { highlight.removeAttribute("d"); panel.classList.remove("show"); picker?.leave(); };
@@ -3802,7 +3796,6 @@
         const step = 360 / list.length;
         return list.map((c, k) => [c, k * step, (k + 1) * step]);
       };
-      const greyDots = (list) => greyPieces(list).map(([c, d0, d1]) => [c, ...polar((GREYS[0] + GREYS[1]) / 2, (d0 + d1) / 2)]);
       // The flat wheel's squares: colours in their cells (slice, and ring b); the greys round the inner ring.
       const drawSquares = (list, greyList) => {
         const cells = new Map();
@@ -3821,14 +3814,9 @@
         }
         for (const [c, d0, d1] of greyPieces(greyList)) segment(c, ringSector(GREYS[0], GREYS[1], d0, d1));
       };
-      // The flat wheel; its dots at their hue and chroma (√chroma from the inner ring's edge to the rim).
-      let marksAs = "squares";
+      // The flat wheel (without the views): its squares.
       const flatRing = (b) => [RING[0] + b * bandWidth, RING[0] + b * bandWidth + bandWidth];
-      const flatR = (C) => RING[0] + ((Math.sqrt(C) - lo) / (hi - lo)) * (RING[1] - RING[0]);
-      const drawFlat = () => {
-        if (marksAs === "dots") drawDots([...chromatic.map((c) => [c, ...polar(flatR(c.oklch[1]), c.oklch[2])]), ...greyDots(greys)]);
-        else drawSquares(chromatic, greys);
-      };
+      const drawFlat = () => drawSquares(chromatic, greys);
 
       // Background: the continuous wheel on the same mapping, faded (in 2D, the slice, at full strength),
       // repainted when the size changes or the slice does. With the views, what's been painted is kept
@@ -3999,29 +3987,8 @@
       };
       // The greys' cell: out to chroma 0.02, or to the edge where that's nearer (at black and white, the point).
       const greyDisc = (t) => (t.some((v) => v > 0) ? `M ${Array.from({ length: 720 }, (_, k) => polar(Math.min(inner, t[k]), k / 2).map((v) => v.toFixed(4)).join(" ")).join(" L ")} Z` : circlePath(0, 0, 0.04));
-      // The background: the slice's colours, continuous, or (`cells`) each cell its own colour, and the
-      // greys' (chroma under 0.02) the level's grey.
-      const paintLevel = (L, t, cells) => {
-        const furthest = Math.max(...t), grey = oklabToLinearSRGB(L, 0, 0);
-        return paintField(canvas, (x, y, rgb, unit) => {
-          const r = Math.sqrt(x * x + y * y);
-          if (r >= furthest) return 0; // beyond the slice's furthest
-          const k = ((Math.atan2(-y, x) * 360) / Math.PI + 720) % 720, k0 = k | 0, e = t[k0] + (t[k0 + 1] - t[k0]) * (k - k0);
-          const alpha = Math.min(1, (e - r) / unit); // antialiased edge
-          if (alpha <= 0) return 0;
-          if (cells) {
-            const { n, tones } = cells[Math.min(cells.length - 1, (k / (2 * SLICE)) | 0)];
-            rgb.set(r < inner ? grey : tones[ringOf((r - inner) / (e - inner), n)].rgb);
-            return alpha;
-          }
-          const f = r * edge * edge; // chroma per unit of distance: C = (r edge)², over r
-          oklabToLinearSRGB(L, f * x, -f * y, rgb); // a = C cos h, b = C sin h
-          return alpha;
-        });
-      };
-      // A level's dots (its edge `t`, its colours and its greys): at their share of the way out to the edge,
-      // inside it, as far out as the edge leaves room for the whole dot, over the hues it spans; the greys'
-      // start on the axis and move apart as overlapping dots do. As placeDots gives them.
+      // A level's dots kept inside its edge (`t`), as far out as the edge leaves room for the whole dot, over
+      // the hues it spans; the greys' start on the axis and move apart as overlapping dots do (placeDots).
       const keepInEdge = (t) => (q, c) => {
           const r = Math.hypot(q[0], q[1]);
           if (isGrey(c) || r < inner / 2) return false;
@@ -4034,8 +4001,6 @@
           q[1] *= most / r;
           return true;
         };
-      const levelDots = (t, list, greyList) => placeDots([...list.map((c) => [c, ...polar(out(shareOf(c), edgeAt(t, c.oklch[2])), c.oklch[2])]), ...greyList.map((c) => [c, 0, 0])], keepInEdge(t));
-      // The slice of level i (lightness L, its colours `here`; none: darker than the press prints).
       const edgePaths = new WeakMap(); // the slice's edge, by its table
       const edgePath = (t, point) => { // per half degree, as the cells (at black and white, the point)
         if (!edgePaths.has(t)) edgePaths.set(t, point ? circlePath(0, 0, 0.04) : `M ${Array.from({ length: 720 }, (_, k) => polar(t[k], k / 2).map((v) => v.toFixed(4)).join(" ")).join(" L ")} Z`);
@@ -4049,50 +4014,16 @@
         return `M ${[...sideLine(tr, 1), ...sideLine(tl, -1).reverse()].join(" L ")} Z`;
       };
       const pagesRim = () => `M -1 ${pageY(1).toFixed(4)} H 1 V ${pageY(0).toFixed(4)} H -1 Z`;
-      const drawSlice = (L, i, here, none) => {
-        const list = here.filter((c) => !isGrey(c)), greyList = here.filter(isGrey);
-        const t = levelEdge(L), point = !none && !t.some((v) => v > 0), cells = levelCells(L, t);
-        cut = { L, t, cells };
-        // Dots (levelDots); squares: each colour's cell split by hue, as the wheel's are; the greys a disc on
-        // the axis, split as the wheel's ring is.
-        if (marksAs === "dots") for (const [c, x, y, reach] of levelDots(t, list, greyList)) dot(c, x, y, reach);
-        else {
-          const groups = new Map();
-          for (const c of list) {
-            const s = sliceOf(c), b = ringOf(shareOf(c), cells[s].n), key = `${s} ${b}`;
-            if (!groups.has(key)) groups.set(key, { s, b, list: [] });
-            groups.get(key).list.push(c);
-          }
-          for (const { s, b, list } of groups.values()) {
-            // split over the hues where the cell has room (the whole slice, unless it ends in a point)
-            const hues = room(steps(s * SLICE, (s + 1) * SLICE, 2), (deg) => edgeAt(t, deg)), d0 = hues[0], w = (hues[hues.length - 1] - d0) / list.length, n = cells[s].n;
-            list.sort((p, q) => p.oklch[2] - q.oklch[2]);
-            list.forEach((c, k) => segment(c, levelPiece(t, b / n, (b + 1) / n, d0 + k * w, d0 + (k + 1) * w)));
-          }
-          const axis = point ? 0.04 : AXIS; // at black and white, the point
-          for (const [c, d0, d1] of greyPieces(greyList)) segment(c, greyList.length === 1 ? circlePath(0, 0, axis) : ringSector(0, axis, d0, d1)).classList.add("on-axis");
-        }
-        // At black and white, the slice is the axis alone, a point: a small disc of that grey, not faded,
-        // as it's all there is. Darker than the press prints, in Print, there's nothing.
-        if (surface === "grid" && !none && !point) { // the squares' cells, under Wada's colours
-          layer.prepend(svgEl("path", { class: "grid", d: [circlePath(0, 0, AXIS), ...cells.flatMap(({ n }, s) => Array.from({ length: n }, (_, b) => levelPiece(t, b / n, (b + 1) / n, s * SLICE, (s + 1) * SLICE)))].join(" ") }));
-        }
-        if (!none) sliceEdge.setAttribute("d", edgePath(t, point));
-        if (point) sliceEdge.style.fill = `oklch(${L} 0 0)`;
-        rim.setAttribute("d", circlePath(0, 0, 1));
-        background = { key: `level ${i} ${surface} ${range}`, paint: () => paintLevel(L, t, surface === "cells" && cells) };
-      };
       // Level i, and the control with `chosen` marked; `seen` false (in 3D, where the slice isn't shown), the
       // control and the caption only.
       const drawLevel = (i, chosen, seen = true) => {
         const L = lightOf(i), here = colors.filter((c) => levelOf(c) === i), none = L < G.darkest;
-        if (seen && picker) drawSlice(L, i, here, none);
-        else if (seen) drawDisc({ ...levelDisc(L, i), none }, here);
+        if (seen) drawDisc({ ...levelDisc(L, i), none }, here);
         const where = (i) => {
           const range = `lightness ${num(Math.max(0, lightOf(i) - 0.025))} to ${num(Math.min(1, lightOf(i) + 0.025))}`;
           return i === 0 ? `White, ${range}` : i === LEVELS ? `Black, ${range}` : range[0].toUpperCase() + range.slice(1);
         };
-        captionText.textContent = `${where(i)} · ${plural(here.length)}${none ? ` · too dark to print (darkest: ${num(G.darkest)})` : ""}${picker ? "" : view === "3d" ? solidWords(opt, { peel, opened: solid?.opened() ?? [], inCells: ballsInCells() }) : spaceWords(false)}`;
+        captionText.textContent = `${where(i)} · ${plural(here.length)}${none ? ` · too dark to print (darkest: ${num(G.darkest)})` : ""}${view === "3d" ? solidWords(opt, { peel, opened: solid?.opened() ?? [], inCells: ballsInCells() }) : spaceWords(false)}`;
         svg.setAttribute("aria-label", `A slice of OKLCH's colour solid: ${where(i).toLowerCase()}`);
         // The control: the chosen level, and a ghost of the one previewed.
         markLevel(chosen, i);
@@ -4239,73 +4170,6 @@
         return { css: `oklch(${+L[k].toFixed(4)} ${+C[k].toFixed(4)} ${midHue(s)})` };
       };
       const onPages = (s) => colors.filter((c) => isGrey(c) || sliceOf(c) === s || sliceOf(c) === opposite(s)).length;
-      const drawPages = (s, chosen) => {
-        const left = opposite(s), sideOf = (c) => (isGrey(c) ? 0 : sliceOf(c) === s ? 1 : sliceOf(c) === left ? -1 : null);
-        const tr = pageEdge(midHue(s)), tl = pageEdge(midHue(left));
-        const pages = { [1]: { side: 1, s, h: midHue(s), t: tr, cells: pageCells(tr, midHue(s)) }, [-1]: { side: -1, s: left, h: midHue(left), t: tl, cells: pageCells(tl, midHue(left)) } };
-        cut = pages;
-        // By cell: the greys' (one per level, down the middle) and each page's (level, and ring out to its edge).
-        const groups = new Map();
-        for (const c of colors) {
-          const side = sideOf(c);
-          if (side === null) continue;
-          const i = levelOf(c), key = `${side} ${side ? ringOf(shareOf(c), pages[side].cells[i].n) : 0} ${i}`;
-          if (!groups.has(key)) groups.set(key, []);
-          groups.get(key).push(c);
-        }
-        // Squares: a cell split side by side, in hue order (greys lightest first); dots: at the colour's
-        // lightness and its share of the way out to the edge there, inside it (the greys' in their
-        // piece's middle).
-        const items = [];
-        for (const [key, list] of groups) {
-          const [side, b, i] = key.split(" ").map(Number), m = list.length;
-          list.sort(side ? (p, q) => p.oklch[2] - q.oklch[2] : (p, q) => q.oklch[0] - p.oklch[0]);
-          list.forEach((c, k) => {
-            if (!side) { // the greys' column, ±AXIS
-              if (marksAs === "dots") items.push([c, -AXIS + ((k + 0.5) * 2 * AXIS) / m, pageY(c.oklch[0])]);
-              else segment(c, greyStrip(tr, tl, i, AXIS, k, m)).classList.add("on-axis");
-              return;
-            }
-            const { t, cells } = pages[side], n = cells[i].n;
-            if (marksAs === "dots") items.push([c, side * out(shareOf(c), edgeAtL(t, c.oklch[0])), pageY(c.oklch[0])]);
-            else {
-              const j = side > 0 ? k : m - 1 - k; // left to right: out from the axis on the right, in towards it on the left
-              segment(c, pageStrip(t, side, i, (b + j / m) / n, (b + (j + 1) / m) / n));
-            }
-          });
-        }
-        // Dots inside: as far out as the edge leaves room for the whole dot, over the lightness it spans;
-        // the greys', up or down, away from white or black, until it does (White's, at the very top).
-        const edgeNear = (x, L) => {
-          let e = Infinity;
-          for (let k = -4; k <= 4; k++) e = Math.min(e, edgeAtL(pages[x >= 0 ? 1 : -1].t, L + (DOT / PAGE_Y) * (k / 4)));
-          return e;
-        };
-        const keepIn = (q, c) => {
-          let L = 0.5 - q[1] / PAGE_Y, moved = false;
-          if (isGrey(c)) {
-            while (Math.abs(q[0]) + DOT > edgeNear(q[0], L) + 1e-6 && Math.abs(L - 0.5) > 0.05) {
-              L += L > 0.5 ? -0.001 : 0.001;
-              moved = true;
-            }
-            if (moved) q[1] = pageY(L);
-            return moved;
-          }
-          const most = Math.max(inner, edgeNear(q[0], L) - DOT);
-          if (Math.abs(q[0]) <= most + 1e-6) return false;
-          q[0] = Math.sign(q[0]) * most;
-          return true;
-        };
-        if (marksAs === "dots") drawDots(items, keepIn);
-        if (surface === "grid") { // the squares' cells, under Wada's colours
-          layer.prepend(svgEl("path", { class: "grid", d: pages[1].cells.flatMap((_, i) => [greyStrip(tr, tl, i, AXIS),
-            ...[1, -1].flatMap((side) => { const { t, cells } = pages[side], n = cells[i].n; return Array.from({ length: n }, (_, b) => pageStrip(t, side, i, b / n, (b + 1) / n)); })]).join(" ") }));
-        }
-        sliceEdge.setAttribute("d", pagesOutline(tr, tl));
-        rim.setAttribute("d", pagesRim());
-        background = { key: `pages ${s} ${surface} ${range}`, paint: () => paintPages(midHue(s), midHue(left), tr, tl, surface === "cells" && [pages[1].cells, pages[-1].cells]) };
-        pagesAround(s, chosen, left, "");
-      };
       // Round the pages: the svg's label, the caption (`more` at its end) and the dial.
       const pagesAround = (s, chosen, left, more) => {
         svg.setAttribute("aria-label", `Two pages of OKLCH's colour solid, back to back: hues ${pageName(left)} and ${pageName(s)}`);
@@ -4354,8 +4218,7 @@
       placeDialLabels();
       dialFace.append(...dialLabels);
 
-      // The Colors page's views (Create's picker keeps its own switches and views, above), as the switches
-      // say (opt). The space: real, each colour at its own distance from the axis (√chroma), inside the
+      // The views (the Colors page's and Create's picker's), as the switches say (opt). The space: real, each colour at its own distance from the axis (√chroma), inside the
       // outline of what the range holds; or normalised, every hue (through the axis, every level) stretched
       // out to the rim, each colour at its share of the way out to its edge there, the greys' cell as it is.
       // The background, OKLCH's own colours: smooth; a grid, each cell its own colour, its border drawn;
@@ -4502,7 +4365,7 @@
           : blank;
       };
 
-      // Through the axis, on the page: as drawPages draws them for the picker, in either space.
+      // Through the axis: two pages back to back, in either space.
       const drawPagesView = (s, chosen) => {
         const norm = normed(), left = opposite(s), sideOf = (c) => (isGrey(c) ? 0 : sliceOf(c) === s ? 1 : sliceOf(c) === left ? -1 : null);
         const tr = pageEdge(midHue(s)), tl = pageEdge(midHue(left));
@@ -4604,30 +4467,8 @@
       // the print profile (estimateCMYK). Clicking it opens its card.
       let cut = null; // the slice shown, its edge and cells: drawLevel's, or drawPages' two pages
       const span = (i) => `lightness ${num(rowOf(i)[0])} to ${num(rowOf(i)[1])}`;
-      const colourAt = (e) => {
-        const q = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse()), smooth = surface !== "cells";
-        if (cut.kind) return colourOnView(q);
-        if (slicing === "level") {
-          const { L, t, cells } = cut, r = Math.hypot(q.x, q.y), h = ((Math.atan2(-q.y, q.x) * 180) / Math.PI + 360) % 360;
-          if (smooth) return { oklch: [L, Math.min((r * edge) ** 2, most(L, h)), h], line: `On the slice across the axis at lightness ${num(L)}. ` };
-          if (r < inner) return { oklch: [L, 0, 0], key: "greys", d: greyDisc(t), line: `Greys, chroma under 0.02, ${span(shown)}. ` };
-          const s = Math.min(cells.length - 1, Math.floor(h / SLICE)), { n, tones } = cells[s], b = ringOf((r - inner) / Math.max(1e-9, edgeAt(t, h) - inner), n);
-          return {
-            oklch: tones[b].oklch, key: `${s} ${b}`, d: levelPiece(t, b / n, (b + 1) / n, s * SLICE, (s + 1) * SLICE),
-            line: `Hue ${s * SLICE}–${(s + 1) * SLICE}°, ring ${b + 1} of ${n} out to the edge, ${span(shown)}. `,
-          };
-        }
-        const page = cut[q.x >= 0 ? 1 : -1], L = Math.min(1, Math.max(0, 0.5 - q.y / PAGE_Y)), x = Math.abs(q.x);
-        if (smooth) return { oklch: [L, Math.min((x * edge) ** 2, most(L, page.h)), page.h], line: `On the page of hue ${page.h}° (${pageName(page.s)}). ` };
-        const i = Math.min(LEVELS, Math.max(0, Math.round((1 - L) * LEVELS)));
-        if (x < inner) return { oklch: [lightOf(i), 0, 0], key: `greys ${i}`, d: greyStrip(cut[1].t, cut[-1].t, i, inner), line: `Greys, chroma under 0.02, ${span(i)}. ` };
-        const { n, tones } = page.cells[i], b = ringOf((x - inner) / Math.max(1e-9, edgeAtL(page.t, L) - inner), n);
-        return {
-          oklch: tones[b].oklch, key: `${page.side} ${i} ${b}`, d: pageStrip(page.t, page.side, i, b / n, (b + 1) / n),
-          line: `Hue ${page.s * SLICE}–${(page.s + 1) * SLICE}°, ring ${b + 1} of ${n} out to the edge, ${span(i)}. `,
-        };
-      };
-      // On the page's views: smooth, exactly there (normalised, at the share of the way out that the point
+      const colourAt = (e) => colourOnView(new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse()));
+      // Smooth, exactly there (normalised, at the share of the way out that the point
       // is); else its cell's, outlined.
       const colourOnView = (q) => {
         const norm = normed(), smooth = opt.bg === "smooth";
@@ -4665,7 +4506,7 @@
         const C = +at.oklch[1].toFixed(4), oklch = [+at.oklch[0].toFixed(4), C, C ? +at.oklch[2].toFixed(2) : 0];
         return { ...at, oklch, css: oklchText(oklch), cmyk: estimateCMYK(oklch) };
       };
-      const smoothNow = () => (picker ? surface !== "cells" : opt.bg === "smooth");
+      const smoothNow = () => opt.bg === "smooth";
       const title = () => (!smoothNow() ? "Cell colour" : view === "flat" ? "Wheel colour" : "Slice colour");
       let under = ""; // the colour hovered (its cell, or its values), so as not to show it again
       // In the panel: as one of Wada's colours, so nothing moves; or, if it's the one already there, not again.
@@ -4707,46 +4548,19 @@
         ? { oklch: t.oklch, key: `3d greys ${t.i}`, line: `Greys, chroma under 0.02, ${span(t.i)}. ` }
         : { oklch: t.oklch, key: `3d ${t.s} ${t.i} ${t.b}`, line: `Hue ${pageName(t.s)}, ring ${t.b + 1} of ${t.n} out to the edge, ${span(t.i)}. ` });
 
-      // The switches: the view; squares or dots; and, in 2D, how the solid is sliced and how the slice's
-      // own colours show. The view is named; the others are icons: four cells or four dots; the solid's
-      // outline with the slice in it, a level seen a little from the side or the pages standing up; a disc
-      // shading out from its middle, cut into cells, or only its outline, dashed.
-      const at4 = (f) => [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, y]) => f(3.6 * x, 3.6 * y)).join("");
-      const MARKS = [
-        ["squares", "Squares: each colour fills its piece of its cell", at4((x, y) => `<rect x="${x - 2.7}" y="${y - 2.7}" width="5.4" height="5.4"/>`)],
-        ["dots", "Dots: each colour at its place (in 2D, its share of the way out to the slice's edge)", at4((x, y) => `<circle cx="${x}" cy="${y}" r="2.5"/>`)],
-      ];
+      // The switches: the view (named), then icons: in 2D, how the solid is sliced (its outline with the
+      // slice in it, a level seen a little from the side or the pages standing up), the views' own
+      // (viewSwitches), and in 3D, the cut. Create's picker has the same, but 3D.
       const OUTLINE = `<ellipse rx="5" ry="7" fill="none"/>`;
       const SLICES = [
         ["level", "Slice across the axis: one lightness, seen from above", `${OUTLINE}<ellipse rx="5" ry="1.7"/>`],
         ["pages", "Slice through the axis: a hue's page and the opposite hue's, back to back", `${OUTLINE}<ellipse rx="1.7" ry="7"/>`],
-      ];
-      const cellIcons = [[0, 0.9], [1.7, 4], [4.8, 7]].flatMap(([r0, r1], ring) => (ring ? Array.from({ length: 6 }, (_, k) => ringSector(r0, r1, k * 60 + 5, k * 60 + 55)) : [circlePath(0, 0, 0.9)]));
-      const SURFACES = [
-        ["smooth", "Smooth: hovering the slice shows the colour exactly under the pointer",
-          `<defs><radialGradient id="${P}surface-smooth"><stop offset="0" stop-color="currentColor" stop-opacity="0.15"/><stop offset="1" stop-color="currentColor"/></radialGradient></defs><circle r="7" fill="url(#${P}surface-smooth)" stroke="none"/>`],
-        ["grid", "Smooth with cells: the same, with the squares' cells drawn over it, so that each colour's cell shows",
-          `<defs><radialGradient id="${P}surface-grid"><stop offset="0" stop-color="currentColor" stop-opacity="0.15"/><stop offset="1" stop-color="currentColor"/></radialGradient></defs><circle r="7" fill="url(#${P}surface-grid)" stroke="none"/>${cellIcons.map((d) => `<path d="${d}" fill="none" stroke="var(--bg)" stroke-width="0.6"/>`).join("")}`],
-        ["cells", "Cells: the slice in the squares' cells, each its middle's colour", cellIcons.map((d) => `<path d="${d}" stroke="none"/>`).join("")],
-        ["none", "None: only Wada's colours, in the slice's outline", `<circle r="7" fill="none" stroke-dasharray="2.5 2.5"/>`],
       ];
       // In 3D, where the cut is from: the top (the lower part stays) or the bottom. Each choice is drawn as
       // the solid's outline, the part that stays filled.
       const CUTS = [
         ["top", "Cut from the top: the lower part stays", `<path d="M -5 0 A 5 7 0 0 1 5 0" fill="none" stroke-dasharray="1.8 1.6"/><path d="M -5 0 A 5 7 0 0 0 5 0 Z"/><path d="M -7 0 H 7"/>`],
         ["bottom", "Cut from the bottom: the upper part stays", `<path d="M -5 0 A 5 7 0 0 0 5 0" fill="none" stroke-dasharray="1.8 1.6"/><path d="M -5 0 A 5 7 0 0 1 5 0 Z"/><path d="M -7 0 H 7"/>`],
-      ];
-      // In 3D, the empty cells (none of Wada's colours there), as in the Ostwald view: every cell a dot, Wada's
-      // colours' bigger; or hidden; only a dot of the cell's own colour; the cell, with that dot; or filled
-      // with it. Each choice is drawn as a cell, dashed where the cell isn't drawn; every cell a dot, as a
-      // dot, with smaller ones at the cell's corners.
-      const SQUARE = `<rect x="-5" y="-5" width="10" height="10"`;
-      const CELLS = [
-        ["all", "Every cell a dot: Wada's colours bigger, the cell's own colour in the empty cells", `<circle r="2.4"/>${[[-5, -5], [5, -5], [5, 5], [-5, 5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.9"/>`).join("")}`],
-        ["hidden", "Empty cells hidden: only Wada's colours", `${SQUARE} fill="none" stroke-dasharray="2.5 2.5"/>`],
-        ["points", "Empty cells: only a dot of the cell's own colour", `${SQUARE} fill="none" stroke-dasharray="2.5 2.5"/><circle r="2.1"/>`],
-        ["dots", "Empty cells: the cell, with a dot of its own colour", `${SQUARE} fill="none"/><circle r="2.1"/>`],
-        ["filled", "Empty cells filled with their own colour", `${SQUARE}/>`],
       ];
       const modes = Object.assign(document.createElement("div"), { className: "view-modes" });
       modes.innerHTML = `<div class="view-switch" role="group" aria-label="View">`
@@ -4756,23 +4570,19 @@
         + `<div class="view-switch" role="group" aria-label="Range">`
         + `<button type="button" data-wheel-range="screen" title="Screen: the widest screens' colours (Rec. 2020), which hold all of Wada's and all the press prints; a screen that shows fewer clips the rest">Screen</button>`
         + `<button type="button" data-wheel-range="print" title="Print: the press's colours (Japan Color 2011 Coated), as Wada's colours were printed">Print</button></div>`
-        + (picker
-          ? optionSwitch("Marks", "wheel-marks", MARKS) + optionSwitch("Slice", "wheel-slicing", SLICES) + optionSwitch("Surface", "wheel-surface", SURFACES) + optionSwitch("Cells", "wheel-empty", CELLS)
-          : optionSwitch("Slice", "wheel-slicing", SLICES) + viewSwitches(`${P}wheel-view`))
+        + optionSwitch("Slice", "wheel-slicing", SLICES) + viewSwitches(`${P}wheel-view`)
         + optionSwitch("Cut", "wheel-cut", CUTS);
       const option = (key) => modes.querySelector(`[data-option="${key}"]`);
-      const marksOption = option("wheel-marks"), slicingOption = option("wheel-slicing"), surfaceOption = option("wheel-surface"), emptyOption = option("wheel-empty"), cutOption = option("wheel-cut");
+      const slicingOption = option("wheel-slicing"), cutOption = option("wheel-cut");
       layout.append(wheel, control, dialBox, caption, modes);
       box.append(panel, layout);
 
-      // What's shown, remembered by the page: the range, the view, the marks, the slicing, the surface; the level (8: lightness 0.6)
+      // What's shown, remembered by the page: the range, the view, the slicing; the level (8: lightness 0.6)
       // and the pages (2: red, 20–30°, on the right); and, while the pointer previews another on the
       // control or the dial, the one shown.
       let view = (picker ? ["2d"] : ["2d", "3d"]).includes(saved("wheel-view")) ? saved("wheel-view") : "flat", slicing = saved("wheel-slicing") === "pages" ? "pages" : "level";
-      let surface = ["grid", "cells", "none"].includes(saved("wheel-surface")) ? saved("wheel-surface") : "smooth", cutFrom = saved("wheel-cut") === "bottom" ? "bottom" : "top";
-      let empties = CELLS.some(([value]) => value === saved("wheel-empty")) ? saved("wheel-empty") : "dots"; // in 3D
+      let cutFrom = saved("wheel-cut") === "bottom" ? "bottom" : "top";
       let solid = null, solidFrom = null; // the 3D view's (makeOklchSolid), made when first shown (none without WebGL 2); and where the last one was seen from
-      marksAs = saved("wheel-marks") === "dots" ? "dots" : "squares";
       let level = Math.min(LEVELS, Math.max(0, Number(saved("wheel-level") ?? 8) | 0)), shown = level;
       let page = wrap(Number(saved("wheel-page") ?? 2) | 0), pageShown = page;
       const render = () => {
@@ -4791,14 +4601,8 @@
         hovered = null;
         solid?.unhover();
         layout.dataset.view = view === "2d" ? slicing : view;
-        if (picker) layout.dataset.surface = surface;
-        onSlice = picker ? view !== "flat" && surface !== "none" : view === "2d" && (opt.bg === "smooth" || opt.bg === "grid"); // on the slice's own colours (none: on the page's)
-        if (view === "flat" && picker) {
-          drawFlat();
-          background = flat();
-          captionText.textContent = "Colour wheel: hue around, chroma outwards";
-          svg.setAttribute("aria-label", captionText.textContent);
-        } else if (view === "flat") {
+        onSlice = view === "2d" && (opt.bg === "smooth" || opt.bg === "grid"); // on the slice's own colours (none: on the page's)
+        if (view === "flat") {
           loadPrintTable(); // for the wheel's own colours' CMYK
           drawDisc(flatDisc(), colors);
           captionText.textContent = `Every colour by hue and chroma, its lightness left out, each hue at its most vivid lightness · ${plural(colors.length)}${spaceWords(false)}`;
@@ -4809,16 +4613,15 @@
             drawLevel(shown, level, false); // (for the control and the caption: the slice isn't shown)
             solid?.cut(shown); // (none while the first is made: it's cut there once it is)
           } else if (slicing === "level") drawLevel(shown, level);
-          else if (picker) drawPages(pageShown, page);
           else drawPagesView(pageShown, page);
         }
         paintBackground();
         drawNumbers();
       };
       // For the picker: the colours picked, numbered where they are on what's shown: Wada's on their own
-      // squares or dots; any other at its hue and chroma (√chroma, as the dots), on the flat wheel or the
-      // slice it's on (its level, or its hue's page; outside the slice if the range doesn't hold it), the
-      // greys on the axis.
+      // pieces or dots; any other at its place, as Wada's dots are placed (its share of the way out to the
+      // edge, at most the edge, in the space shown), on the flat wheel or the slice it's on (its level, or
+      // its hue's page), the greys on the axis.
       const badges = svgEl("g", { class: "pick-marks" });
       if (picker) svg.append(badges);
       let numbered = [];
@@ -4829,13 +4632,12 @@
           let at = spots.get(c) ?? null;
           const path = segments.get(c)?.path;
           if (!at && path) { const b = path.getBBox(); at = [b.x + b.width / 2, b.y + b.height / 2]; }
-          if (c.index === undefined) { // not one of Wada's
-            const [L, C, h] = c.oklch;
-            if (view === "flat") at = polar(C < NEUTRAL_C ? 0 : Math.min(RING[1], flatR(C)), h);
-            else if (slicing === "level" && levelOf(c) === shown) at = polar(isGrey(c) ? 0 : rho(C), h); // (beyond the slice's edge, if it's beyond the range)
-            else if (slicing === "pages") {
-              const side = sliceOf(c) === pageShown ? 1 : sliceOf(c) === opposite(pageShown) ? -1 : isGrey(c) ? 0 : null;
-              if (side !== null) at = [side * rho(C), pageY(L)];
+          if (c.index === undefined && cut) { // not one of Wada's
+            const [L, , h] = c.oklch;
+            if (cut.kind !== "pages") { if (view === "flat" || levelOf(c) === shown) at = polar(isGrey(c) ? 0 : discR(cut, cut.share(c), h), h); }
+            else {
+              const side = isGrey(c) ? 0 : sliceOf(c) === pageShown ? 1 : sliceOf(c) === opposite(pageShown) ? -1 : null;
+              if (side !== null) at = [side && side * (normed() ? rN(shareOf(c)) : out(shareOf(c), edgeAtL(cut[side].t, L))), pageY(L)];
             }
           }
           if (at) badges.append(picker.badge(c, i + 1, at, 0.045));
@@ -4904,11 +4706,9 @@
             colors,
             walls: {
               LEVELS, SLICE, PAGE_Y, AXIS, inner, out, room, steps, lightOf, rowOf, levelOf, isGrey, sliceOf, shareOf, ringOf, midHue, pageEdge, edgeAtL, pageCells, NAMED: G.NAMED, vivid, pageName,
-              ...(picker ? {} : {
-                under: true, exact: !ballsInCells(), norm: opt.space === "normalised", edgeOf, onOpened: still3d, key: `oklch ${range}`,
-                placeOf: (c) => [rho(c.oklch[1]), c.oklch[2], c.oklch[0]],
-                linearAt: (h, L, r) => { const C = (r * edge) ** 2, a = (h * Math.PI) / 180; return oklabToLinearSRGB(L, C * Math.cos(a), C * Math.sin(a)); },
-              }),
+              under: true, exact: !ballsInCells(), norm: opt.space === "normalised", edgeOf, onOpened: still3d, key: `oklch ${range}`,
+              placeOf: (c) => [rho(c.oklch[1]), c.oklch[2], c.oklch[0]],
+              linearAt: (h, L, r) => { const C = (r * edge) ** 2, a = (h * Math.PI) / 180; return oklabToLinearSRGB(L, C * Math.cos(a), C * Math.sin(a)); },
             },
             start,
             onColour: (c) => { under = ""; fillDetails(panel, c); panel.classList.add("show"); },
@@ -4930,11 +4730,11 @@
         attach: (s) => {
           solid = s;
           wheel.append(s.canvas, ...s.labels);
-          if (picker) s.empty(empties);
-          else { s.look(opt); s.peel(peel); }
+          s.look(opt);
+          s.peel(peel);
           s.cut(shown);
           s.side(cutFrom, false);
-          if (!picker) caption3d();
+          caption3d();
         },
         detach: (s) => {
           if (solid === s) solid = null;
@@ -4946,7 +4746,7 @@
       });
       const solidMade = () => {
         if (noSolid) return false; // (tried once: without WebGL 2, 3D can't be chosen again)
-        solidLook = picker ? "" : lookOf3d();
+        solidLook = lookOf3d();
         if (slot.want(`${solidLook} ${range}`, solidFrom)) return true;
         noSolid = true;
         Object.assign(modes.querySelector('[data-wheel-view="3d"]'), { disabled: true, title: "3D needs WebGL 2, which this browser doesn't have" });
@@ -4959,22 +4759,16 @@
         else slot.drop();
       };
       const setView = (v) => {
-        if (v === "3d" && !picker) opt = prefs.load(v); // (the solid made for 3D's look)
+        if (v === "3d") opt = prefs.load(v); // (the solid made for 3D's look)
         if (v === "3d" && !solidMade()) v = "2d";
         view = v;
         shown = level;
         pageShown = page;
-        if (picker) {
-          marksOption.hidden = v === "3d"; // (Wada's colours fill their cells, or are spheres, as the cells switch says)
-          slicingOption.hidden = surfaceOption.hidden = v !== "2d";
-          emptyOption.hidden = cutOption.hidden = v !== "3d";
-        } else {
-          slicingOption.hidden = v !== "2d";
-          cutOption.hidden = v !== "3d";
-        }
+        slicingOption.hidden = v !== "2d";
+        cutOption.hidden = v !== "3d";
         pressed(modes, "wheel-view", v);
         save("wheel-view", v);
-        if (!picker) loadLook();
+        loadLook();
         render();
       };
       // The range: everything's drawn again in it, the 3D solid made again (seen from where it was).
@@ -4994,12 +4788,6 @@
         render();
       };
       onChoice(modes, "wheel-range", setRange);
-      const setMarks = (m) => {
-        marksAs = m;
-        pressed(modes, "wheel-marks", m);
-        save("wheel-marks", m);
-        render();
-      };
       const setSlicing = (how) => {
         slicing = how;
         shown = level;
@@ -5009,21 +4797,6 @@
         render();
       };
       onChoice(modes, "wheel-view", setView);
-      onChoice(modes, "wheel-marks", setMarks);
-      const setSurface = (how) => {
-        surface = how;
-        pressed(modes, "wheel-surface", how);
-        save("wheel-surface", how);
-        render();
-      };
-      const setEmpty = (how) => {
-        hide();
-        solid?.unhover();
-        empties = how;
-        pressed(modes, "wheel-empty", how);
-        save("wheel-empty", how);
-        solid?.empty(how);
-      };
       const setCut = (where, animate) => {
         cutFrom = where;
         pressed(modes, "wheel-cut", where);
@@ -5048,7 +4821,7 @@
       let peel = savedPeel(saved);
       const caption3d = () => { if (view === "3d") drawLevel(shown, level, false); };
       const still3d = caption3d;
-      const prefs = picker ? null : viewPrefs(saved, save, (v) => {
+      const prefs = viewPrefs(saved, save, (v) => {
         const oldSurface = saved("wheel-surface"), wada = saved("wheel-marks") === "dots" ? "dots" : "grid";
         if (v === "flat") return { space: "normalised", bg: "smooth", strength: "faded", wada };
         if (v === "3d") { // smooth walls, as the old smooth surface (the default) showed it, or the old cells
@@ -5098,20 +4871,12 @@
         } else render();
       };
       onChoice(modes, "wheel-slicing", setSlicing);
-      if (picker) {
-        onChoice(modes, "wheel-surface", setSurface);
-        onChoice(modes, "wheel-empty", setEmpty);
-      } else {
-        for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
-        onChoice(modes, "bg", (value) => choose("bg", value));
-        onChoice(modes, "bg3", (value) => choose("bg", value));
-      }
+      for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
+      onChoice(modes, "bg", (value) => choose("bg", value));
+      onChoice(modes, "bg3", (value) => choose("bg", value));
       onChoice(modes, "wheel-cut", (where) => setCut(where, true));
       pressed(modes, "wheel-range", range);
-      pressed(modes, "wheel-marks", marksAs);
       pressed(modes, "wheel-slicing", slicing);
-      pressed(modes, "wheel-surface", surface);
-      pressed(modes, "wheel-empty", empties);
       pressed(modes, "wheel-cut", cutFrom);
       setView(view);
       return { panel, wheel, mark, box, numbers: (list) => { numbered = list; drawNumbers(); } };
@@ -5126,7 +4891,7 @@
       for (const b of modes.querySelectorAll(`[data-${key}]`)) b.addEventListener("click", () => f(b.getAttribute(`data-${key}`)));
     }
 
-    // The views' own switches, the same in every system (the Colors page's; Create's picker keeps its own):
+    // The views' own switches, the same in every system (the Colors page's, and Create's picker's):
     // the space, real or normalised; the background, the system's own colours, smooth, a grid, a grid with a
     // dot in each cell, only the dots, or none (in 3D, smooth walls or a smooth solid in smooth's place);
     // its strength, full or faded; and Wada's colours, on the grid, as dots or none. Each the same icon
@@ -6147,18 +5912,6 @@
       });
       // 2D (the disc) or 3D (the whole solid, made when first asked for).
       const modes = Object.assign(document.createElement("div"), { className: "view-modes" });
-      // The cells: every one a dot, Wada's colours' bigger; or, for the empty cells (none of Wada's colours
-      // there), hidden; only a dot of the system's own colour; the cell, with that dot; or filled with it.
-      // Each choice is drawn as a cell, a diamond as in the solid, dashed where the cell isn't drawn; every
-      // cell a dot, as a dot, with smaller ones where the diamond's corners would be.
-      const DIAMOND = `<path d="M 0 -6 L 6 0 L 0 6 L -6 0 Z"`;
-      const EMPTY = [
-        ["all", "Every cell a dot: Wada's colours bigger, the system's own in the empty cells", `<circle r="2.4"/>${[[0, -6], [6, 0], [0, 6], [-6, 0]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.9"/>`).join("")}`],
-        ["hidden", "Empty cells hidden: only Wada's colours", `${DIAMOND} fill="none" stroke-dasharray="2.12 2.12"/>`],
-        ["points", "Empty cells: only a dot of the system's own colour", `${DIAMOND} fill="none" stroke-dasharray="2.12 2.12"/><circle r="2.1"/>`],
-        ["dots", "Empty cells: the cell, with a dot of the system's own colour", `${DIAMOND} fill="none"/><circle r="2.1"/>`],
-        ["filled", "Empty cells filled with the system's own colour", `${DIAMOND}/>`],
-      ];
       // In 3D, where the cut is from: the top (the lower part stays) or the bottom. Each choice is drawn
       // as the solid's outline, the part that stays filled.
       const CUT = [
@@ -6173,11 +5926,12 @@
         ["level", "Slice across the axis, one level seen from above", `${OUTLINE}<ellipse rx="5.5" ry="1.9"/>`],
         ["pages", "Slice through the axis, a hue's page and its complement's back to back", `${OUTLINE}<path d="M 0 -7 L 2.2 0 L 0 7 L -2.2 0 Z"/>`],
       ];
-      modes.innerHTML = (picker ? "" : `<div class="view-switch" role="group" aria-label="View">`
+      // (Create's picker has the same switches, but 3D.)
+      modes.innerHTML = `<div class="view-switch" role="group" aria-label="View">`
           + `<button type="button" data-mode="flat" title="Flat. Every colour by hue and colour content, its level left out, the isochromes as rings">Flat</button>`
           + `<button type="button" data-mode="2d" title="2D. A slice of the solid, across its axis (one level) or through it (a hue's page and its complement's)">2D</button>`
-          + `<button type="button" data-mode="3d" title="3D. The whole solid, its 24 pages round the greys, cut at a level. Drag to turn it">3D</button></div>`)
-        + (picker ? optionSwitch("Cells", "empty", EMPTY) + optionSwitch("Slice", "slicing", SLICING) : optionSwitch("Slice", "slicing", SLICING) + viewSwitches(`${P}-view`, false))
+          + (picker ? "" : `<button type="button" data-mode="3d" title="3D. The whole solid, its 24 pages round the greys, cut at a level. Drag to turn it">3D</button>`) + `</div>`
+        + optionSwitch("Slice", "slicing", SLICING) + viewSwitches(`${P}-view`, false)
         + optionSwitch("Cut", "cut", CUT);
       const cutOption = modes.querySelector('[data-option="cut"]'), slicingOption = modes.querySelector('[data-option="slicing"]');
       layout.append(disc, control, caption, modes);
@@ -6214,6 +5968,7 @@
         svg, cells, highlight, picker, key: "ostwald", hide, showColour, showCell, openCell,
         spotOf: (c) => {
           const { sector, level: s, ring: r } = c.ostwald ?? notation(c.oklch);
+          if (disc.dataset.mode === "flat") return r === 0 ? [0, 0] : discAt(r, sector, (r + 0.5) / N);
           if (disc.dataset.slicing === "pages") {
             const k = pageShown, side = r === 0 ? 0 : sector === k ? 1 : sector === wrap(k + 12) ? -1 : null;
             return side === null ? null : [side * r * PX, pageY(s)];
@@ -6242,29 +5997,28 @@
       const centreDots = (list) => roundDots(list, 1 / N, emptyDot(0), centre);
 
       // The Colors page's views, as the switches say (opt: the background, its strength and Wada's colours;
-      // Ostwald's space is regular as it is, so it has no space switch). Create's picker keeps its cells
-      // switch, all drawn as it was. The background: smooth, the mixture continuous between the cells
-      // (labAt); a grid, each cell filled with its own colour; the cell with its dot; the dot alone; or
+      // Ostwald's space is regular as it is, so it has no space switch), Create's picker's too. The
+      // background: smooth, the mixture continuous between the cells (labAt); a grid, each cell filled with its own colour; the cell with its dot; the dot alone; or
       // none. The empty cells are drawn as the CSS says (data-empty, from the background); a cell holding
       // Wada's colours has none when they're on the grid or in it (as dots on a grid). Wada's colours: on
       // the grid, each filling its piece of its cell; dots, in their cell on a grid, else at their place
       // (placeOf); or none.
       let opt = { space: "real", bg: "grid", strength: "full", wada: "grid" }; // (set by loadLook)
-      const prefs = picker ? null : viewPrefs(saved, save, (view) => {
+      const prefs = viewPrefs(saved, save, (view) => {
         const old = OLD_CELLS[saved("empty")];
         if (view === "3d" && !old) return { space: "real", bg: "walls", strength: "full", wada: "grid" }; // smooth walls until chosen
         const [bg, wada] = old ?? OLD_CELLS.dots;
         return { space: "real", bg, strength: "full", wada };
       });
-      const cellsShown = () => picker || CELL_BGS.includes(opt.bg);
-      const dotsInCells = () => (picker ? disc.dataset.empty === "all" : opt.wada === "dots" && CELL_BGS.includes(opt.bg));
-      const skipTaken = () => picker || opt.wada === "grid"; // (dots in their cells: the cell stays under them)
+      const cellsShown = () => CELL_BGS.includes(opt.bg);
+      const dotsInCells = () => opt.wada === "dots" && CELL_BGS.includes(opt.bg);
+      const skipTaken = () => opt.wada === "grid"; // (dots in their cells: the cell stays under them)
       // Wada's colours on the page (wadaMarks): a dot (in its cell, or at its place), or a piece of its cell.
-      const { wadaDot, placeDot, wadaPiece } = wadaMarks(cells, (...a) => segment(...a), picker);
+      const { wadaDot, placeDot, wadaPiece } = wadaMarks(cells, (...a) => segment(...a));
       // A colour's place in the disc (ring r out, sector at the angle: 0 at the top, clockwise), fractional.
       const discAt = (ring, sector, R = ring / N) => { const t = ((90 - sector * 15) * Math.PI) / 180; return [R * Math.cos(t), -R * Math.sin(t)]; };
       const sectorAt = (x, y) => ((((90 - (Math.atan2(-y, x) * 180) / Math.PI) / 15) % 24) + 24) % 24;
-      // The smooth background (not in the picker): the mixture at each point, painted (fieldSurface); its
+      // The smooth background: the mixture at each point, painted (fieldSurface); its
       // colour under the pointer, named by the nearest cell, and its card.
       const smoothOwn = (lab) => smoothOwnOf(lab, notation);
       const SMOOTH_TITLE = "Ostwald, interpolated";
@@ -6279,7 +6033,11 @@
         const own = smoothOwn(lab);
         showComputedDetail(own, SMOOTH_TITLE, estimateCMYK(own.oklch), `Interpolated between the system's own colours. The nearest is Ostwald ${own.near.code}. `, "interpolated between Ostwald's own colours");
       };
-      const surface = picker ? null : fieldSurface({ disc, svg, cells, highlight, id: P, hide: () => hide(), show: showLab, open: openLab, turn: (deg) => deg });
+      const surface = fieldSurface({ // (in the picker, hovering or clicking it goes to the picker, as an OKLCH colour)
+        disc, svg, cells, highlight, id: P, hide: () => hide(), turn: (deg) => deg,
+        show: (lab, e) => (picker ? picker.hover(picker.oklch(smoothOwn(lab).oklch), e) : showLab(lab)),
+        open: (lab) => (picker ? picker.pick(picker.oklch(smoothOwn(lab).oklch)) : openLab(lab)),
+      });
       // A place in the smooth solid (3D): its sector, level and ring, unrounded; the mixture there.
       const pointLab = (k, s, r) => {
         const sc = Math.min(TOP, Math.max(0, s)), rc = Math.min(Math.max(0, r), Math.min(sc, TOP - sc));
@@ -6354,7 +6112,6 @@
       // The background (on the page): smooth (job), its outline hovered; grid, grid and dot, dots, each
       // empty cell (cellsOf); and the outline drawn round smooth, dots and none.
       const background = (job, outline, cellsOf) => {
-        if (picker) return cellsOf();
         surface.paint(opt.bg === "smooth" ? job : null);
         if (!(opt.bg === "grid" || opt.bg === "griddot")) surface.outline(outline, opt.bg === "smooth");
         if (CELL_BGS.includes(opt.bg)) cellsOf();
@@ -6428,11 +6185,9 @@
       const drawPages = (k, chosen) => {
         hide();
         clear();
-        const { left, count } = describePages(k), dots = dotsInCells(), atPlace = !picker && opt.wada === "dots" && !dots, skip = skipTaken();
-        if (!picker) {
-          const tip = [0, -PS / Math.sqrt(3)];
-          background(pagesJob(k), [tip, [PS, 0], [0, PS / Math.sqrt(3)], [-PS, 0]], () => {});
-        }
+        const { left, count } = describePages(k), dots = dotsInCells(), atPlace = opt.wada === "dots" && !dots, skip = skipTaken();
+        const tip = [0, -PS / Math.sqrt(3)];
+        background(pagesJob(k), [tip, [PS, 0], [0, PS / Math.sqrt(3)], [-PS, 0]], () => {});
         // Wada's colours on these pages, by cell: side 1 (k's page), -1 (its complement's), 0 (the greys).
         const groups = new Map();
         for (const c of colors) {
@@ -6443,14 +6198,14 @@
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key).push(c);
         }
-        const pieces = [], later = picker ? (draw) => draw() : (draw) => pieces.push(draw); // (Wada's pieces, after all the cells, their halos over them all; the picker's as they always were)
+        const pieces = []; // (Wada's pieces, after all the cells, their halos over them all)
         for (let s = 0; s <= TOP; s++) {
           for (let r = s % 2; r <= Math.min(s, TOP - s); r += 2) {
             const a = (s + r) / 2, b = (s - r) / 2, y = pageY(s);
             for (const side of r === 0 ? [0] : [-1, 1]) {
               const x = side * r * PX, sector = side === 0 ? null : side > 0 ? k : left, list = groups.get(`${side} ${s} ${r}`);
               if (cellsShown() && !(list && skip)) empty(diamond(x, y), x, y, 0.3 * PY, cell(sector, a, b), !!list && dots);
-              if (!list || (!picker && opt.wada === "none")) continue;
+              if (!list || opt.wada === "none") continue;
               if (atPlace) { // at its place: its level down, its ring out (the greys on the axis)
                 for (const c of list) { const at = placeOf(c); placeDot(c, side * at.ring * PX, pageY(at.level)); }
                 continue;
@@ -6470,7 +6225,7 @@
                 place(size).forEach(([px, py], i) => wadaDot(list[i], piece(x, y, i, m, sideways), { x: px, y: py, r: size }));
                 continue;
               }
-              list.forEach((c, i) => later(() => wadaPiece(c, piece(x, y, i, m, sideways))));
+              list.forEach((c, i) => pieces.push(() => wadaPiece(c, piece(x, y, i, m, sideways))));
             }
           }
         }
@@ -6546,7 +6301,7 @@
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key).push(c);
         }
-        const skip = skipTaken(), job = picker ? null : levelJob(level);
+        const skip = skipTaken(), job = levelJob(level);
         background(job, job && circlePoints(job.R), () => {
           for (let r = level % 2; r <= Math.min(level, TOP - level); r += 2) {
             const a = (level + r) / 2, b = (level - r) / 2;
@@ -6562,9 +6317,9 @@
           }
         });
         // Wada's colours: greys by lightness, others clockwise by hue (measured from the sector's middle);
-        // or, as dots, in their cells (every cell a dot, in the picker), or at their place.
-        const dots = dotsInCells(), atPlace = !picker && opt.wada === "dots" && !dots;
-        for (const [key, list] of picker || opt.wada !== "none" ? groups : []) {
+        // or, as dots, in their cells (on a grid), or at their place.
+        const dots = dotsInCells(), atPlace = opt.wada === "dots" && !dots;
+        for (const [key, list] of opt.wada !== "none" ? groups : []) {
           if (key === "centre") {
             list.sort((x, y) => y.ostwald.white - x.ostwald.white);
             if (dots || atPlace) centreDots(list).forEach(({ c, d, ...dot }) => wadaDot(c, d, dot));
@@ -6732,7 +6487,7 @@
       // The page's switches, saved per view, shown on the disc's data (for the CSS: the empty cells as the
       // background draws them, data-empty) and on the switches; in 3D, the solid told how to show its cells
       // (every cell a dot where Wada's colours are dots on a grid). Choosing one draws the view again.
-      const emptyIn3d = () => (picker ? disc.dataset.empty : opt.wada === "dots" && CELL_BGS.includes(opt.bg) ? "all" : EMPTY_OF[opt.bg]);
+      const emptyIn3d = () => (opt.wada === "dots" && CELL_BGS.includes(opt.bg) ? "all" : EMPTY_OF[opt.bg]);
       const showLook = () => {
         const view = disc.dataset.mode;
         Object.assign(disc.dataset, { space: "real", surface: opt.bg, bg: opt.bg, strength: opt.strength, wada: opt.wada, empty: EMPTY_OF[opt.bg] });
@@ -6741,16 +6496,12 @@
         pressed(modes, "bg3", opt.bg);
         modes.querySelector('[data-option="bg"]').hidden = view === "3d";
         modes.querySelector('[data-option="bg3"]').hidden = view !== "3d";
-        if (picker) solid?.empty(emptyIn3d());
-        else {
-          if (solidLook && solidLook !== String(ballsInCells())) remake3d();
-          solid?.look(opt, caption3d);
-        }
+        if (solidLook && solidLook !== String(ballsInCells())) remake3d();
+        solid?.look(opt, caption3d);
         if (view === "3d" && opt.bg === "solid") { control.dataset.peel = ""; peelControl.place(peel); }
         else delete control.dataset.peel;
       };
       function loadLook() {
-        if (picker) return;
         opt = prefs.load(disc.dataset.mode);
         showLook();
       }
@@ -6760,15 +6511,6 @@
         prefs.keep(disc.dataset.mode, key, value);
         showLook();
         render();
-      };
-      const setEmpty = (how) => {
-        hide();
-        const redraw = (how === "all") !== (disc.dataset.empty === "all"); // Wada's colours change too (the rest is the CSS)
-        disc.dataset.empty = how;
-        if (redraw) render();
-        solid?.empty(how);
-        pressed(modes, "empty", how);
-        save("empty", how);
       };
       const setSlicing = (how) => {
         slicing = how;
@@ -6788,19 +6530,15 @@
         save("cut", where);
       };
       onChoice(modes, "mode", setMode);
-      if (picker) onChoice(modes, "empty", setEmpty);
-      else {
-        for (const key of ["strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
-        onChoice(modes, "bg", (value) => choose("bg", value));
-        onChoice(modes, "bg3", (value) => choose("bg", value));
-      }
+      for (const key of ["strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
+      onChoice(modes, "bg", (value) => choose("bg", value));
+      onChoice(modes, "bg3", (value) => choose("bg", value));
       onChoice(modes, "cut", (where) => setCut(where, true));
       onChoice(modes, "slicing", setSlicing);
-      const savedMode = saved("mode"), savedEmpty = saved("empty"), savedCut = saved("cut"), savedSlicing = saved("slicing");
-      if (picker) setEmpty(EMPTY.some(([value]) => value === savedEmpty) ? savedEmpty : "dots");
+      const savedMode = saved("mode"), savedCut = saved("cut"), savedSlicing = saved("slicing");
       setCut(savedCut === "bottom" ? "bottom" : "top", false);
       setSlicing(savedSlicing === "pages" ? "pages" : "level");
-      setMode(!picker && (savedMode === "3d" || savedMode === "flat") ? savedMode : "2d");
+      setMode((savedMode === "3d" && !picker) || savedMode === "flat" ? savedMode : "2d");
       return picker ? { box, numbers } : box;
     }
 
@@ -6973,7 +6711,7 @@
 
     // A view's smooth field (the notations' and Ostwald's), on a canvas under the disc's svg (`disc`, `svg`,
     // its `cells` group and `highlight`; `id`, for the clip's). Hovering its outline shows the colour under
-    // the pointer (show(lab)), clicking it opens its card (open(lab)); leaving it, hide(). turn(deg): an
+    // the pointer (show(lab, event)), clicking it opens its card (open(lab)); leaving it, hide(). turn(deg): an
     // angle, as atPolar takes hues. Returns paint(job) (null: nothing) and outline(points, live).
     function fieldSurface({ disc, svg, cells, highlight, id, hide, show, open, turn }) {
       // The field, painted on a canvas under the disc's svg (the same box, so in the svg's units), clipped to
@@ -7143,7 +6881,7 @@
           const lab = colourUnder(e);
           if (!lab) return;
           highlight.removeAttribute("d");
-          show(lab);
+          show(lab, e);
         });
         path.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") hide(); });
         path.addEventListener("click", (e) => {
@@ -7259,16 +6997,9 @@
 
       // The switches: the view (Flat, 2D or 3D, made when first asked for) and the range; then, as in the
       // other views, the slicing (2D), the space, the background, its strength, Wada's colours (see
-      // viewSwitches) and the cut (3D). Create's picker keeps its own: the cells, the slicing.
+      // viewSwitches) and the cut (3D). Create's picker has the same, but 3D.
       const modes = Object.assign(document.createElement("div"), { className: "view-modes" });
       const SQUARE = `<rect x="-5" y="-5" width="10" height="10"`;
-      const EMPTY = [
-        ["all", "Every cell a dot: Wada's colours bigger, the system's own in the empty cells", `<circle r="2.4"/>${[[-5, -5], [5, -5], [5, 5], [-5, 5]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.9"/>`).join("")}`],
-        ["hidden", "Empty cells hidden: only Wada's colours", `${SQUARE} fill="none" stroke-dasharray="2.5 2.5"/>`],
-        ["points", "Empty cells: only a dot of the system's own colour", `${SQUARE} fill="none" stroke-dasharray="2.5 2.5"/><circle r="2.1"/>`],
-        ["dots", "Empty cells: the cell, with a dot of the system's own colour", `${SQUARE} fill="none"/><circle r="2.1"/>`],
-        ["filled", "Empty cells filled with the system's own colour", `${SQUARE}/>`],
-      ];
       const OUTLINE = `<ellipse rx="5" ry="7" fill="none"/>`;
       const SLICING = [
         ["level", `Slice across the axis, one ${levelWord}, seen from above`, `${OUTLINE}<ellipse rx="5" ry="1.7"/>`],
@@ -7288,9 +7019,9 @@
         + `<div class="view-switch" role="group" aria-label="Range">`
         + `<button type="button" data-range="screen" title="Screen. The system's colours the widest screens show (Rec. 2020), a screen that shows fewer clipping the rest">Screen</button>`
         + `<button type="button" data-range="print" title="Print. The system's colours the press prints (Japan Color 2011 Coated), as Wada's colours were printed">Print</button></div>`
-        + (picker ? optionSwitch("Cells", "empty", EMPTY) + optionSwitch("Slice", "slicing", SLICING) : optionSwitch("Slice", "slicing", SLICING) + viewSwitches(`${P}-view`)) + optionSwitch("Cut", "cut", CUT);
+        + optionSwitch("Slice", "slicing", SLICING) + viewSwitches(`${P}-view`) + optionSwitch("Cut", "cut", CUT);
       const option = (key) => modes.querySelector(`[data-option="${key}"]`);
-      const cutOption = option("cut"), slicingOption = option("slicing"), emptyOption = option("empty");
+      const cutOption = option("cut"), slicingOption = option("slicing");
       layout.append(disc, control, caption, modes);
       box.append(panel, layout);
       let solid = null, solidFrom = null, cut = "top"; // the 3D view's (makeOklchSolid); where the last one was seen from
@@ -7336,13 +7067,13 @@
         svg, cells, highlight, picker, key: KEY, hide, showColour, showCell, openCell,
         spotOf: (c) => {
           const m = c[KEY] ?? sys.nearest(c.oklch);
-          if (disc.dataset.mode === "flat") return m.j ? cellMid(m.k, m.j) : [0, 0];
+          if (disc.dataset.mode === "flat") return m.j ? discSpot(m.k, m.j) : [0, 0];
           if (slicing === "tones") return toneSpot(m);
           if (slicing === "pages") {
             const side = m.j === 0 ? 0 : m.k === pageShown ? 1 : m.k === opposite(pageShown) ? -1 : null;
-            return side === null ? null : [side ? cellX(side, m.j) : 0, pageY(m.i)];
+            return side === null ? null : pageSpot(side, m.i, m.j);
           }
-          return m.i === shown ? (m.j ? cellMid(m.k, m.j) : [0, 0]) : null;
+          return m.i === shown ? (m.j ? discSpot(m.k, m.j) : [0, 0]) : null;
         },
         badgeR: () => (slicing === "tones" && disc.dataset.mode !== "flat" && !toneFocus ? 0.045 : 0.06),
       });
@@ -7353,6 +7084,9 @@
       const cellPath = (k, j, i = 0, m = 1) => ringSector(ringFrom(j), ringFrom(j) + RING, k * DEG - DEG / 2 + (i * DEG) / m, k * DEG - DEG / 2 + ((i + 1) * DEG) / m);
       const centre = (i, m) => (m === 1 ? circlePath(0, 0, INNER) : ringSector(0, INNER, 90 - ((i + 1) * 360) / m, 90 - (i * 360) / m));
       const cellMid = (k, j) => polar(ringFrom(j) + RING / 2, k * DEG);
+      // Where a cell's middle is as last drawn, in its space (for the picker's numbers): on a disc, ring j of
+      // page k; on the pages, ring j of row i on `side`.
+      let discSpot = cellMid, pageSpot = (side, i, j) => [side ? cellX(side, j) : 0, pageY(i)];
       // An empty cell's dot: smaller near the centre, where the cells narrow.
       const emptyDot = (j) => (j === 0 ? 0.024 : Math.min(0.024, 0.32 * Math.min(RING, (ringFrom(j) + RING / 2) * ((DEG * Math.PI) / 180))));
       // Every cell a dot: Wada's colours in a sector of a ring (page k's, from r0 to r1, round x0, y0; its
@@ -7414,7 +7148,8 @@
         // normalised space, j of the row's rings of the way from AX to the rim, PS); the greys, AX each way.
         const colX = (side, i, j) => (norm ? AX + (j / Math.max(1, fit.rings(side < 0 ? left : k, i))) * (PS - AX) : AX + j * CELL);
         const span = (side, i, j) => (side ? [side * colX(side, i, j - 1), side * colX(side, i, j)].sort((p, q) => p - q) : [-AX, AX]);
-        const filled = (key) => (L.wada === "grid" || (picker && inCell(L))) && groups.has(key), taken = (key) => !picker && inCell(L) && groups.has(key);
+        const filled = (key) => L.wada === "grid" && groups.has(key), taken = (key) => inCell(L) && groups.has(key);
+        pageSpot = (side, i, j) => [side ? side * ((colX(side, i, j - 1) + colX(side, i, j)) / 2) : 0, pageY(i)];
         background(L,
           () => { // (fine enough to show no corners)
             if (norm) return [[PS, pageY(0) - ROW / 2], [PS, pageY(N - 1) + ROW / 2], [-PS, pageY(N - 1) + ROW / 2], [-PS, pageY(0) - ROW / 2]];
@@ -7832,22 +7567,20 @@
       const openSmooth = (own) => showComputedDetail(own, SMOOTH_TITLE, estimateCMYK(own.oklch),
         `Interpolated between the system's own colours. The nearest is ${sys.title} ${own.near.code}. `, `interpolated between ${sys.title}'s own colours`);
 
-      const surface = picker ? null : fieldSurface({ // (not in the picker, which never paints the smooth field)
-        disc, svg, cells, highlight, id: P, hide: () => hide(), show: (lab) => showSmooth(smoothOwn(lab)), open: (lab) => openSmooth(smoothOwn(lab)),
+      const surface = fieldSurface({ // (in the picker, hovering or clicking it goes to the picker, as an OKLCH colour)
+        disc, svg, cells, highlight, id: P, hide: () => hide(),
+        show: (lab, e) => (picker ? picker.hover(picker.oklch(smoothOwn(lab).oklch), e) : showSmooth(smoothOwn(lab))),
+        open: (lab) => (picker ? picker.pick(picker.oklch(smoothOwn(lab).oklch)) : openSmooth(smoothOwn(lab))),
         turn: (deg) => (((deg / DEG) % PAGES) + PAGES) % PAGES,
       });
       // What's shown, as the switches say (look): the space, the background, its strength and Wada's colours,
       // the view's choices; the picker's, from its cells switch, in real space, its colours' dots in their
       // cells, all drawn as they always were. Wada's colours' dots sit in their cells on a grid in normalised
       // space (inCell), else at their place.
-      const look = () => {
-        if (!picker) return opt;
-        const [bg, wada] = OLD_CELLS[disc.dataset.empty] ?? OLD_CELLS.dots;
-        return { space: "real", bg, strength: "full", wada };
-      };
-      const inCell = (L) => L.wada === "dots" && CELL_BGS.includes(L.bg) && (L.space === "normalised" || !!picker);
-      // The caption's last words: the space shown (none in the picker, which shows only the real one).
-      const spaceWords = (rows) => (picker ? "" : opt.space === "normalised" ? ` · normalised, ${rows ? "every row out to the same width" : "every hue out to the rim"}` : " · real space");
+      const look = () => opt;
+      const inCell = (L) => L.wada === "dots" && CELL_BGS.includes(L.bg) && L.space === "normalised";
+      // The caption's last words: the space shown.
+      const spaceWords = (rows) => (opt.space === "normalised" ? ` · normalised, ${rows ? "every row out to the same width" : "every hue out to the rim"}` : " · real space");
       // In 3D: what the solid shows (solidWords), after the level's caption; and that again as it's peeled or opened.
       let levelCaption = "", peel = savedPeel(saved);
       const words3d = () => solidWords(opt, { peel, opened: solid?.opened() ?? [], inCells: ballsInCells() });
@@ -7855,7 +7588,7 @@
       // 3D: Wada's balls in their cells (dots on a grid in normalised space), else at their place.
       const ballsInCells = () => opt.wada === "dots" && opt.space === "normalised" && CELL_BGS.includes(opt.bg); // (on the grid in the smooth solid: blocks, as on the walls)
       // Wada's colours on the disc and pages (wadaMarks): a dot (in its cell, or at its place), or a piece of its cell.
-      const { wadaDot, placeDot, wadaPiece, newHalos } = wadaMarks(cells, (...a) => segment(...a), picker);
+      const { wadaDot, placeDot, wadaPiece, newHalos } = wadaMarks(cells, (...a) => segment(...a));
       // What a disc paints (a level's, or the flat one), from its field; a level's, with the others (nearest
       // first) to paint ahead. In normalised space, every hue's edge is at the rim: radius r there is
       // INNER + (r - INNER) / (1 - INNER) of the way to the field's edge.
@@ -7904,7 +7637,6 @@
       // and own colour) as the CSS draws empty cells, but those Wada's colours fill; none, only the outline
       // (the outline in real space, where the cells don't draw it).
       const background = (L, outline, job, cellsOf) => {
-        if (picker) return cellsOf(empty); // (its cells always, the CSS showing them as its cells switch says, Hidden too)
         surface.paint(L.bg === "smooth" ? job() : null);
         if (!(L.bg === "grid" || L.bg === "griddot")) surface.outline(outline(), L.bg === "smooth");
         if (CELL_BGS.includes(L.bg)) cellsOf(empty);
@@ -7924,10 +7656,11 @@
         const dotOf = (k, j) => (j === 0 ? emptyDot(0) : Math.min(0.024, 0.32 * Math.min(ringR(k, j) - ringR(k, j - 1), ((ringR(k, j) + ringR(k, j - 1)) / 2) * ((DEG * Math.PI) / 180))));
         // Flat: the centre shared among the system's greys, a piece each (lightest first, clockwise from the
         // top, as the greys of a disc are), Wada's greys in their own grey's piece.
-        const flatGreys = which === "flat" && !picker, greyMid = (i) => 90 - ((i + 0.5) * 360) / N;
+        const flatGreys = which === "flat", greyMid = (i) => 90 - ((i + 0.5) * 360) / N;
         const greyPiece = (i, u = 0, m = 1) => ringSector(0, INNER, 90 - ((i + (u + 1) / m) * 360) / N, 90 - ((i + u / m) * 360) / N);
         const greyDot = Math.min(emptyDot(0), 0.32 * INNER * 0.6 * ((2 * Math.PI) / N));
-        const groups = discGroups(here, flatGreys), filled = (key) => (L.wada === "grid" || (picker && inCell(L))) && groups.has(key), taken = (key) => !picker && inCell(L) && groups.has(key);
+        const groups = discGroups(here, flatGreys), filled = (key) => L.wada === "grid" && groups.has(key), taken = (key) => inCell(L) && groups.has(key);
+        discSpot = (k, j) => polar((ringR(k, j - 1) + ringR(k, j)) / 2, k * DEG);
         background(L,
           () => Array.from({ length: 16 * PAGES }, (_, s) => polar(norm ? 1 : field().edge(s / 16), (s / 16) * DEG)), // (fine enough to show no corners)
           () => (which === "flat" ? flatPaint(norm) : levelPaint(which, true, norm)),
@@ -8203,15 +7936,6 @@
         pressed(modes, "range", r);
         save("range", r);
       };
-      const setEmpty = (how) => {
-        hide();
-        const redraw = (how === "all") !== (disc.dataset.empty === "all"); // Wada's colours change too (the rest is the CSS)
-        disc.dataset.empty = how;
-        if (redraw) render();
-        solid?.empty(how);
-        pressed(modes, "empty", how);
-        save("empty", how);
-      };
       const setSlicing = (how) => {
         slicing = how;
         const mode = disc.dataset.mode ?? "2d";
@@ -8260,7 +7984,6 @@
         else delete control.dataset.peel;
       };
       const loadLook = () => {
-        if (picker) return;
         opt = prefs.load(viewKey());
         showLook();
       };
@@ -8277,18 +8000,14 @@
       };
       onChoice(modes, "mode", setMode);
       onChoice(modes, "range", setRange);
-      if (picker) onChoice(modes, "empty", setEmpty);
-      else {
-        for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
-        onChoice(modes, "bg", (value) => choose("bg", value));
-        onChoice(modes, "bg3", (value) => choose("bg", value));
-      }
+      for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
+      onChoice(modes, "bg", (value) => choose("bg", value));
+      onChoice(modes, "bg3", (value) => choose("bg", value));
       onChoice(modes, "cut", (where) => setCut(where, true));
       onChoice(modes, "slicing", setSlicing);
       pressed(modes, "range", range);
       halfWidth(0);
-      const savedEmpty = saved("empty"), savedSlicing = saved("slicing");
-      if (picker) setEmpty(EMPTY.some(([value]) => value === savedEmpty) ? savedEmpty : "dots");
+      const savedSlicing = saved("slicing");
       setCut(saved("cut") === "bottom" ? "bottom" : "top", false);
       setSlicing(SLICING.some(([value]) => value === savedSlicing) ? savedSlicing : "level");
       const savedMode = saved("mode");
