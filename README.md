@@ -21,8 +21,8 @@ Then open http://localhost:8000.
 - `combinations.json`: Volume 1's 348 combinations, as indices into `colors.json`, the colours in the book's order (a row left to right; a cross top, left, right, bottom).
 - `seasons.json`: Volume 2's 72 seasonal combinations (six a month, January first), the colours top to bottom.
 - `families.json`: the book's six colour families, in the order of its colour index.
-- `print-gamut.json`: what the press prints (Japan Color 2011 Coated, at most 350% ink): the most chroma at each OKLCH lightness and hue, for the Colors › OKLCH view's Print range, and the full colours and tint edge the Ostwald view measures Wada's colours against (`scripts/print_gamut.py`; see `notes/ostwald.md`).
-- `ostwald-cmyk.json`: CMYK estimated for every cell of the Colors › Ostwald view, by its Ostwald code, for the cells none of Wada's colours fill (`scripts/ostwald_cmyk.py`).
+- `print-gamut.json`: what the press prints (Japan Color 2011 Coated, at most 350% ink): the most chroma at each OKLCH lightness and hue, for the Colors › Colour systems › OKLCH view's Print range, and the full colours and tint edge the Ostwald view measures Wada's colours against (`scripts/print_gamut.py`; see `notes/ostwald.md`).
+- `ostwald-cmyk.json`: CMYK estimated for every cell of the Colors › Colour systems › Ostwald view, by its Ostwald code, for the cells none of Wada's colours fill (`scripts/ostwald_cmyk.py`).
 - `munsell.json`: for the Colors › Munsell view, each colour's Munsell notation, and the system's own colours, the 1943 renotation's, in our space (`scripts/munsell.py`; see `notes/munsell.md`).
 - `pccs.json`: for the Colors › PCCS view, each colour's PCCS notation and tone, and the system's own colours and tones, converted from Munsell's (`scripts/pccs.py`; see `notes/pccs.md`).
 
