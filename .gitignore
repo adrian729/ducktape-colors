@@ -6,3 +6,6 @@
 
 # Compiled from vol2/scripts/ocr.swift (swiftc -O ocr.swift -o ocr)
 /vol2/scripts/ocr
+
+# Python bytecode
+__pycache__/
