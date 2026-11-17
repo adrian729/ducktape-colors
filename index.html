@@ -419,7 +419,7 @@
       justify-self: stretch; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem 2rem;
     }
     .wheel-views > .wheel { grid-column: 2; width: var(--h); }
-    #colors-view .wheel-views > .wheel { margin-inline: calc(var(--h) * 0.25 / 2.4); } /* on the Colors page, in a frame as wide as the other systems' discs (2.9 / 2.4 of its height), centred */
+    :is(#colors-view, .picker) .wheel-views > .wheel { margin-inline: calc(var(--h) * 0.25 / 2.4); } /* on the Colors page and in Create's picker, in a frame as wide as the other systems' discs (2.9 / 2.4 of its height), centred */
     .wheel .dot { cursor: pointer; outline: none; }
     .wheel .dot-hit { fill: transparent; } /* round the dot, as far as its neighbours leave room: easier to hover */
     .wheel :is(.dot-mark, .on-axis) { stroke: var(--line); stroke-width: 0.002; } /* as the Ostwald view's dots: pale ones show (and white, on the axis) */
@@ -517,12 +517,12 @@
     .solid-dot::before { content: ""; position: absolute; inset: -0.45rem; } /* a bigger target */
     /* Under the control: small segmented switches, the view and its options (the Ostwald layout's, and the OKLCH one's). */
     .view-modes { grid-column: 3; grid-row: 2; justify-self: start; align-self: start; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; font-size: 0.7rem; }
-    /* On the Colors page, the switches in a row of their own above the disc, centred, in the same place in every system (the
-       disc's size, and the caption's length, change below them); on wide screens the disc smaller by that row */
-    #colors-view .view-modes { grid-column: 1 / -1; grid-row: 1; justify-self: center; justify-content: center; width: 0; min-width: 100%; }
-    #colors-view :is(.atlas-disc, .atlas-levels, .dial-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
-    #colors-view .view-caption { grid-row: 3; }
-    #colors-view :is(.wheel-box, .ostwald-box, .munsell-box) :is([data-option="slicing"], [data-option="wheel-slicing"]) { margin-right: calc(1.75em + 1px); } /* room for PCCS's third (the tones) in every system, so that the centred row doesn't move */
+    /* On the Colors page and in Create's picker, the switches in a row of their own above the disc, centred, in the same place
+       in every system (the disc's size, and the caption's length, change below them); on wide screens the disc smaller by that row */
+    :is(#colors-view, .picker) .view-modes { grid-column: 1 / -1; grid-row: 1; justify-self: center; justify-content: center; width: 0; min-width: 100%; }
+    :is(#colors-view, .picker) :is(.atlas-disc, .atlas-levels, .dial-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
+    :is(#colors-view, .picker) .view-caption { grid-row: 3; }
+    :is(#colors-view, .picker) :is(.wheel-box, .ostwald-box, .munsell-box) :is([data-option="slicing"], [data-option="wheel-slicing"]) { margin-right: calc(1.75em + 1px); } /* room for PCCS's third (the tones) in every system, so that the centred row doesn't move */
     @media (min-width: 601px) { #colors-view :is(.atlas, .wheel-views) { --h: min(calc(100vh - 14.5rem), calc((100vw - 7rem) / 1.72)); } }
     .view-option { display: flex; align-items: center; gap: 0.45em; color: var(--muted); white-space: nowrap; }
     .view-option[hidden] { display: none; }
@@ -637,7 +637,7 @@
 
     /* Create, picking from OKLCH or Ostwald (the switch at the picker's top, instead of the grid): their views
        as on the Colors page, in the picker's column, laid out as on phones (the wheel or disc as big as the
-       column allows, its control beside it, the switches under them), without the info panel: the line
+       column allows, its control beside it, the switches above them), without the info panel: the line
        above them shows the colour under the pointer. The colours picked are marked on them, numbered. */
     .picker-source { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.8rem; }
     html:has(#create-view:not([hidden])) { scrollbar-gutter: stable; } /* the page scrolls on narrow screens, and the others' do: coming here or switching what the picker shows moves nothing sideways */
@@ -652,14 +652,11 @@
        (registered), so that it's the same inside the dial's box, which measures its own width. */
     @property --picker-h { syntax: "<length>"; inherits: false; initial-value: 0px; }
     .picker :is(.wheel-views, .atlas) { --h: var(--picker-h); grid-template-columns: auto auto; justify-content: center; column-gap: 1rem; }
-    .picker .wheel-views { --picker-h: min(calc(100vh - 18rem), calc((100cqw - 1.5rem) / 1.3)); } /* (the screen's height less the header, the switch, the line above, and the caption and switches below) */
-    .picker .wheel-views[data-view="flat"] { --picker-h: min(calc(100vh - 18rem), 100cqw); grid-template-columns: auto; }
-    .picker .atlas { --picker-h: min(calc(100vh - 18rem), calc((100cqw - 1.5rem) / 1.47)); }
-    .picker .atlas:is([data-view="tones"], [data-view="flat"]) { --picker-h: min(calc(100vh - 18rem), calc(100cqw / 1.21)); } /* no control beside PCCS's tones or Munsell's flat view: the column's width */
+    .picker :is(.wheel-views, .atlas) { --picker-h: min(calc(100vh - 18rem), calc((100cqw - 1.5rem) / 1.47)); } /* (the screen's height less the header, the source switch, the line above, the switches and the caption); OKLCH's wheel in the other systems' discs' frame */
+    .picker :is(.wheel-views, .atlas):is([data-view="tones"], [data-view="flat"]) { --picker-h: min(calc(100vh - 18rem), calc(100cqw / 1.21)); } /* no control beside the flat views or PCCS's tones: the column's width */
     .picker :is(.wheel-views > .wheel, .atlas-disc, .view-caption) { grid-column: 1; }
     .picker :is(.lightness-levels, .atlas-levels, .dial-box) { grid-column: 2; }
     .picker .dial-box { width: calc(var(--h) * 0.3); min-width: 0; }
-    .picker .view-modes { grid-column: 1 / -1; grid-row: 3; justify-self: center; }
     .picker .atlas-disc > .page-label { display: none; } /* no room beside the pages' tips: the caption names their hues */
     .pick-mark { cursor: pointer; }
     .pick-mark circle { stroke: var(--fg); }
@@ -1728,12 +1725,14 @@
       munsell: { range: true, slicing: ["level", "pages"], views: ["flat", "2d", "3d"], space: ["flat", "2d", "3d"] },
       pccs: { range: true, slicing: ["level", "pages", "tones"], views: ["flat", "2d", "tones", "3d"], space: ["flat", "2d", "3d"] },
     };
+    // Where the shared choices are saved: the Colors page's, or Create's picker's (apart, and without 3D).
+    const sharedPrefix = (picker) => (picker ? "create-systems-" : "systems-");
     // The shared choices as `layout` has them, before it's shown: each it hasn't, or whose choice it hasn't,
     // its default.
-    function fitChoices(layout) {
-      const has = SYSTEM_SWITCHES[layout];
-      const fit = (key, values) => { if (!values.includes(stored(`systems-${key}`))) store(`systems-${key}`, SYSTEM_DEFAULTS[key.split("-").pop()]); };
-      fit("view", ["flat", "2d", "3d"]);
+    function fitChoices(layout, picker = false) {
+      const has = SYSTEM_SWITCHES[layout], prefix = sharedPrefix(picker);
+      const fit = (key, values) => { if (!values.includes(stored(prefix + key))) store(prefix + key, SYSTEM_DEFAULTS[key.split("-").pop()]); };
+      fit("view", picker ? ["flat", "2d"] : ["flat", "2d", "3d"]);
       fit("range", has.range ? ["screen", "print"] : []);
       fit("slicing", has.slicing);
       fit("cut", ["top", "bottom"]);
@@ -1742,6 +1741,14 @@
         fit(`v-${view}-space`, shown && has.space.includes(view) ? VIEW_VALUES.space : []);
         for (const key of ["bg", "strength", "wada"]) fit(`v-${view}-${key}`, !shown ? [] : key === "bg" ? VIEW_VALUES.bg[view] : VIEW_VALUES[key]);
       }
+    }
+    // Create's picker's systems, each with its own choices before they were shared: the first time, those
+    // of the one it showed the shared ones.
+    if (stored("create-systems-view") === null && LAYOUTS.includes(stored("create-show"))) {
+      const old = stored("create-show"), prefix = old === "oklch" ? "create-wheel-" : `create-${old}-`, v = old === "oklch" ? "create-" : `create-${old}-`;
+      const own = { view: old === "oklch" ? "create-wheel-view" : `create-${old}-mode`, range: `${prefix}range`, slicing: `${prefix}slicing` };
+      for (const view of ["flat", "2d", "tones"]) for (const key of ["space", "bg", "strength", "wada"]) own[`v-${view}-${key}`] = `${v}v-${view}-${key}`;
+      for (const [key, from] of Object.entries(own)) if (stored(from) !== null) store(`create-systems-${key}`, stored(from));
     }
     // A system once a layout of its own (before "Colour systems"): the one chosen now, and, the first time,
     // its switches' choices the shared ones.
@@ -1772,17 +1779,25 @@
     }
     pressed(systemOption, "system", system);
     onChoice(systemOption, "system", chooseSystem);
-    // Reset: every shared choice its default (the solid's peel, none), the system and where each is kept.
-    const resetOption = Object.assign(document.createElement("div"), { className: "view-option" });
-    resetOption.dataset.option = "reset";
-    resetOption.innerHTML = `<div class="view-switch"><button type="button" title="Every switch back to its default">Reset</button></div>`;
-    resetOption.querySelector("button").addEventListener("click", () => {
-      for (const [key, value] of Object.entries(SYSTEM_DEFAULTS)) if (!["space", "bg", "strength", "wada"].includes(key)) store(`systems-${key}`, value);
-      for (const view of ["flat", "2d", "tones", "3d"]) for (const key of ["space", "bg", "strength", "wada"]) store(`systems-v-${view}-${key}`, SYSTEM_DEFAULTS[key]);
-      store("systems-v-3d-peel", 1);
-      fitChoices(views.colors.dataset.system);
-      layouts.get(views.colors.dataset.system)?.adopt?.();
-    });
+    // Reset, last among the switches: every shared choice its default (the solid's peel, none), the system
+    // and where each is kept (the level, the pages) staying. shown(): the system shown, its view's adopt.
+    function resetSwitch(picker, shown) {
+      const option = Object.assign(document.createElement("div"), { className: "view-option" });
+      option.dataset.option = "reset";
+      option.innerHTML = `<div class="view-switch"><button type="button" title="Every switch back to its default">Reset</button></div>`;
+      option.querySelector("button").addEventListener("click", () => {
+        const prefix = sharedPrefix(picker);
+        for (const [key, value] of Object.entries(SYSTEM_DEFAULTS)) if (!["space", "bg", "strength", "wada"].includes(key)) store(prefix + key, value);
+        for (const view of ["flat", "2d", "tones", "3d"]) for (const key of ["space", "bg", "strength", "wada"]) store(`${prefix}v-${view}-${key}`, SYSTEM_DEFAULTS[key]);
+        store(`${prefix}v-3d-peel`, 1);
+        const [layout, view] = shown();
+        if (!view?.adopt) return;
+        fitChoices(layout, picker);
+        view.adopt();
+      });
+      return option;
+    }
+    const resetOption = resetSwitch(false, () => [views.colors.dataset.system, layouts.get(views.colors.dataset.system)]);
     // The 3D view's camera, shared by the systems as they're changed: how far it's turned from the system's
     // own start (az0, its solid's), round (turn) and its height (el); none till one's been shown.
     let camera = null;
@@ -3549,8 +3564,17 @@
         own: (own, from) => oklchColour(own.oklch, from), // a system's own colour (from "ostwald", "munsell" or "pccs")
         badge,
       };
+      // A system's view, shown: the shared choices as it has them (see fitChoices), Reset among its switches.
+      const reset = resetSwitch(true, () => [views.create.dataset.show, pickers.get(views.create.dataset.show)]);
+      const adopt = (from, view) => {
+        if (!view.adopt) return;
+        fitChoices(from, true);
+        view.adopt();
+        view.box.querySelector(".view-modes")?.append(reset);
+      };
       showSource = () => {
         const from = views.create.dataset.show;
+        if (LAYOUTS.includes(from) && !pickers.has(from)) fitChoices(from, true); // (before it's made, as it reads them)
         // Once its files are in (see filesFor), and those that name the colours picked from it.
         settle("create", LAYOUTS.includes(from) && !pickers.has(from) && (() => Promise.all([filesFor(from, "create-"), nameColours()]).then(([message]) => {
           const view = message ? { box: message, numbers() {} }
@@ -3558,8 +3582,10 @@
             : makeNotation(colors, from === "munsell" ? munsellShared() : pccsShared(), { picker: hooks });
           picker.append(view.box);
           pickers.set(from, view);
+          if (views.create.dataset.show === from) adopt(from, view);
           if (!views.create.hidden && views.create.dataset.show === from) view.numbers(create.picked);
         })));
+        if (pickers.has(from)) adopt(from, pickers.get(from));
         pickers.get(from)?.numbers(create.picked); // now that it's shown, where they are
       };
       // What it shows, chosen at its top (and remembered): the grid, Ostwald, OKLCH, Munsell or PCCS.
@@ -4003,7 +4029,7 @@
       }
       // Its choices, remembered by the page (see below; on the Colors page, its switches' shared with the
       // other systems'); the range first, as everything's drawn in it.
-      const { saved, save } = viewStore(P, !picker, { "wheel-view": "view", "wheel-range": "range", "wheel-slicing": "slicing", "wheel-cut": "cut" });
+      const { saved, save } = viewStore(P, sharedPrefix(picker), { "wheel-view": "view", "wheel-range": "range", "wheel-slicing": "slicing", "wheel-cut": "cut" });
       range = saved("wheel-range") === "print" && press ? "print" : "screen"; // (without what the press prints, Screen: see filesFor)
       G = gamut(range);
 
@@ -4685,7 +4711,7 @@
         + `<div class="view-switch" role="group" aria-label="Range">`
         + `<button type="button" data-wheel-range="screen" title="Screen: the widest screens' colours (Rec. 2020), which hold all of Wada's and all the press prints; a screen that shows fewer clips the rest">Screen</button>`
         + `<button type="button" data-wheel-range="print" title="Print: the press's colours (Japan Color 2011 Coated), as Wada's colours were printed">Print</button></div>`
-        + switchesInOrder(picker, optionSwitch("Slice", "wheel-slicing", SLICES), viewSwitches(`${P}wheel-view`)) + optionSwitch("Cut", "wheel-cut", CUTS);
+        + viewSwitches(`${P}wheel-view`) + optionSwitch("Slice", "wheel-slicing", SLICES) + optionSwitch("Cut", "wheel-cut", CUTS);
       const option = (key) => modes.querySelector(`[data-option="${key}"]`);
       const slicingOption = option("wheel-slicing"), cutOption = option("wheel-cut");
       layout.append(wheel, control, dialBox, caption, modes);
@@ -4694,7 +4720,7 @@
       // What's shown, remembered by the page: the range, the view, the slicing; the level (8: lightness 0.6),
       // and 3D's apart, where the solid's cut (0: at the top, the whole solid); the pages (2: red, 20–30°, on
       // the right); and, while the pointer previews another on the control or the dial, the one shown.
-      const viewSaved = () => (picker ? (saved("wheel-view") === "2d" ? "2d" : "flat") : ["flat", "3d"].includes(saved("wheel-view")) ? saved("wheel-view") : "2d");
+      const viewSaved = () => ((picker ? ["flat"] : ["flat", "3d"]).includes(saved("wheel-view")) ? saved("wheel-view") : "2d");
       let view = viewSaved(), slicing = saved("wheel-slicing") === "pages" ? "pages" : "level";
       let cutFrom = saved("wheel-cut") === "bottom" ? "bottom" : "top";
       let solid = null, solidFrom = null, cameraLater = null; // the 3D view's (makeOklchSolid), made when first shown (none without WebGL 2); where the last one was seen from; and the camera to turn it to once made (see adopt)
@@ -4922,10 +4948,6 @@
         save("wheel-cut", where);
         solid?.side(where, animate);
       };
-      // The page's switches, saved per view (Flat, 2D, 3D), each from the old switches' choice until chosen:
-      // Flat, the wheel as it was (normalised, smooth and faded), with the marks; 2D, the surface (smooth;
-      // the cells, with or without the smooth slice under their lines, as a grid; none), with the marks; 3D,
-      // the cells switch as the notations' (OLD_CELLS), the cells filled as the smooth walls they were.
       // 3D: Wada's balls in their cells (as dots on a grid in normalised
       // space), else at their own place; the solid made again when that or the space changes.
       const ballsInCells = () => opt.wada === "dots" && opt.space === "normalised" && ["grid", "griddot", "dots"].includes(opt.bg); // (on the grid in the smooth solid: blocks, as on the walls)
@@ -4940,16 +4962,7 @@
       let peel = savedPeel(saved);
       const caption3d = () => { if (view === "3d") drawLevel(shown, level, false); };
       const still3d = caption3d;
-      const prefs = viewPrefs(saved, save, !picker ? sharedDefaults : (v) => {
-        const oldSurface = saved("wheel-surface"), wada = saved("wheel-marks") === "dots" ? "dots" : "grid";
-        if (v === "flat") return { space: "normalised", bg: "smooth", strength: "faded", wada };
-        if (v === "3d") { // smooth walls, as the old smooth surface (the default) showed it, or the old cells
-          if (oldSurface !== "cells" && oldSurface !== "grid") return { space: "real", bg: oldSurface === "none" ? "none" : "walls", strength: "full", wada: "grid" };
-          const [bg, inside] = OLD_CELLS[saved("wheel-empty")] ?? OLD_CELLS.dots;
-          return { space: "real", bg: bg === "grid" ? "walls" : bg, strength: "full", wada: inside };
-        }
-        return { space: "real", bg: oldSurface === "cells" || oldSurface === "grid" ? "grid" : oldSurface === "none" ? "none" : "smooth", strength: "full", wada };
-      });
+      const prefs = viewPrefs(saved, save, sharedDefaults); // (the page's switches, saved per view: Flat, 2D, 3D)
       const setPeel = (p) => {
         peel = p;
         save("v-3d-peel", p);
@@ -5008,7 +5021,7 @@
         setCut(saved("wheel-cut") === "bottom" ? "bottom" : "top", false);
         peel = savedPeel(saved);
         solid?.peel(peel);
-        const at = cameraAt(80); // (makeOklchSolid's start)
+        const at = !picker && cameraAt(80); // (makeOklchSolid's start)
         if (at) solidFrom = { ...solidFrom, ...at };
         setView(viewSaved());
         if (at && solid) solid.restore({ ...solid.state(), ...at });
@@ -5077,23 +5090,19 @@
       return (space ? optionSwitch("Space", "space", SPACE, space === true ? "" : space) : "") + optionSwitch("Background", "bg", BG) + optionSwitch("Background", "bg3", BG3)
         + optionSwitch("Strength", "strength", STRENGTH) + optionSwitch("Wada's", "wada", WADA);
     }
-    // The slice and the views' own switches, in their order: on the Colors page the slice last but the cut
-    // (the two at the end, where PCCS's slice, with its tones, is wider than the others' without moving
-    // them); in Create's picker, the slice first, as it was.
-    function switchesInOrder(picker, slice, own) { return picker ? slice + own : own + slice; }
-    // The Colors page's systems share their switches' choices: a system's view's saved choices are its own
-    // (under `prefix`), but on the Colors page (`shared`) its switches' (`aliases`: its own names for the
-    // view, range, slice and cut; and the views' choices, v-...) are saved under "systems-", the same for
-    // every system (see fitChoices).
+    // The systems share their switches' choices, the Colors page's apart from Create's picker's: a system's
+    // view's saved choices are its own (under `prefix`: the level, the pages), but its switches' (`aliases`:
+    // its own names for the view, range, slice and cut; and the views' choices, v-...) are saved under
+    // `shared` ("systems-", or the picker's "create-systems-"), the same for every system (see fitChoices).
     function viewStore(prefix, shared, aliases) {
       const keyOf = (key) => {
-        const common = shared && (aliases[key] ?? (key.startsWith("v-") ? key : null));
-        return common ? `systems-${common}` : prefix + key;
+        const common = aliases[key] ?? (key.startsWith("v-") ? key : null);
+        return common ? shared + common : prefix + key;
       };
       return { saved: (key) => stored(keyOf(key)), save: (key, value) => store(keyOf(key), value) };
     }
     // A view's choices, saved per system and per view (Flat, 2D, the tones, 3D: what applies differs), each
-    // from its default (defaults(view), which may read the old switches' saved choices) until chosen.
+    // from its default (defaults(view)) until chosen.
     function viewPrefs(saved, save, defaults) {
       const ok = (view, key, value) => (key === "bg" ? VIEW_VALUES.bg[view] : VIEW_VALUES[key]).includes(value);
       return {
@@ -5107,9 +5116,6 @@
         keep: (view, key, value) => save(`v-${view}-${key}`, value),
       };
     }
-    // The old cells switch's choices as a background and Wada's colours: filled, a grid; the cell with a dot,
-    // grid and dot; only the dot, dots; hidden, none; every cell a dot, dots, Wada's colours dots too.
-    const OLD_CELLS = { filled: ["grid", "grid"], dots: ["griddot", "grid"], points: ["dots", "grid"], hidden: ["none", "grid"], all: ["dots", "dots"] };
     // The backgrounds that draw the cells (a grid, grid and dot, dots); and, for each background, how the
     // empty cells show (data-empty, for the CSS and the 3D solid).
     const CELL_BGS = ["grid", "griddot", "dots"];
@@ -5905,7 +5911,7 @@
         return ownCells.get(key);
       };
       const P = picker ? "create-ostwald" : "ostwald"; // its saved choices' and its ids' prefix
-      const { saved, save } = viewStore(`${P}-`, !picker, { mode: "view", slicing: "slicing", cut: "cut" }); // (on the Colors page, its switches' shared: see viewStore)
+      const { saved, save } = viewStore(`${P}-`, sharedPrefix(picker), { mode: "view", slicing: "slicing", cut: "cut" }); // (its switches' shared: see viewStore)
       // (The empty cells' CMYK, estimated through the print profile by scripts/ostwald_cmyk.py: ostwaldCMYK,
       // once fetched, if made for this calibration.)
       const N = LETTERS.length, TOP = 2 * (N - 1), MIDDLE = N - 1; // levels 0 (white) to TOP (black)
@@ -6075,16 +6081,16 @@
         ["level", "Slice across the axis, one level seen from above", `${OUTLINE}<ellipse rx="5.5" ry="1.9"/>`],
         ["pages", "Slice through the axis, a hue's page and its complement's back to back", `${OUTLINE}<path d="M 0 -7 L 2.2 0 L 0 7 L -2.2 0 Z"/>`],
       ];
-      // (Create's picker has the same switches, but 3D.) On the Colors page, the range and space switches
-      // the other systems have are here too, off, so that the switches keep their places from one system to
+      // (Create's picker has the same switches, but 3D.) The range and space switches the other systems
+      // have are here too, off, so that the switches keep their places from one system to
       // the next: its real space is already regular, and every cell prints.
       const RANGE_OFF = "Ostwald's colours all print, so there's no range to choose";
       modes.innerHTML = `<div class="view-switch" role="group" aria-label="View">`
           + `<button type="button" data-mode="flat" title="Flat. Every colour by hue and colour content, its level left out, the isochromes as rings">Flat</button>`
           + `<button type="button" data-mode="2d" title="2D. A slice of the solid, across its axis (one level) or through it (a hue's page and its complement's)">2D</button>`
           + (picker ? "" : `<button type="button" data-mode="3d" title="3D. The whole solid, its 24 pages round the greys, cut at a level. Drag to turn it">3D</button>`) + `</div>`
-        + (picker ? "" : `<div class="view-switch" role="group" aria-label="Range" title="${RANGE_OFF}"><button type="button" title="${RANGE_OFF}" disabled>Screen</button><button type="button" title="${RANGE_OFF}" disabled>Print</button></div>`)
-        + switchesInOrder(picker, optionSwitch("Slice", "slicing", SLICING), viewSwitches(`${P}-view`, picker ? false : "Ostwald's real space is already regular, so there's no other to choose"))
+        + (`<div class="view-switch" role="group" aria-label="Range" title="${RANGE_OFF}"><button type="button" title="${RANGE_OFF}" disabled>Screen</button><button type="button" title="${RANGE_OFF}" disabled>Print</button></div>`)
+        + viewSwitches(`${P}-view`, "Ostwald's real space is already regular, so there's no other to choose") + optionSwitch("Slice", "slicing", SLICING)
         + optionSwitch("Cut", "cut", CUT);
       const cutOption = modes.querySelector('[data-option="cut"]'), slicingOption = modes.querySelector('[data-option="slicing"]');
       layout.append(disc, control, caption, modes);
@@ -6157,12 +6163,7 @@
       // the grid, each filling its piece of its cell; dots, in their cell on a grid, else at their place
       // (placeOf); or none.
       let opt = { space: "real", bg: "grid", strength: "full", wada: "grid" }; // (set by loadLook)
-      const prefs = viewPrefs(saved, save, !picker ? sharedDefaults : (view) => {
-        const old = OLD_CELLS[saved("empty")];
-        if (view === "3d" && !old) return { space: "real", bg: "walls", strength: "full", wada: "grid" }; // smooth walls until chosen
-        const [bg, wada] = old ?? OLD_CELLS.dots;
-        return { space: "real", bg, strength: "full", wada };
-      });
+      const prefs = viewPrefs(saved, save, sharedDefaults);
       const cellsShown = () => CELL_BGS.includes(opt.bg);
       const dotsInCells = () => opt.wada === "dots" && CELL_BGS.includes(opt.bg);
       const skipTaken = () => opt.wada === "grid"; // (dots in their cells: the cell stays under them)
@@ -6709,7 +6710,7 @@
         pressed(modes, "slicing", slicing);
         peel = savedPeel(saved);
         solid?.peel(peel);
-        const at = cameraAt(180); // (makeSolid's start)
+        const at = !picker && cameraAt(180); // (makeSolid's start)
         if (at) solidFrom = { ...solidFrom, ...at };
         setMode(savedMode());
         if (at) faceLater = false; // (seen from where the last system was, not facing the pages)
@@ -6717,7 +6718,7 @@
         else cameraLater = at; // (its solid still being made)
       };
       const camera = () => cameraOf(solid?.state() ?? solidFrom, 180);
-      return picker ? { box, numbers } : { box, adopt, camera };
+      return { box, numbers, adopt, camera };
     }
 
     // A notation's cells (Munsell's or PCCS's), as its view has them: page k (of the hue circle, k pages
@@ -7102,7 +7103,7 @@
       const { key: KEY, PAGES, LEVELS, JMAX, pageName, chip, grey } = sys;
       const N = LEVELS.length, DEG = 360 / PAGES, MID = (N - 1) / 2; // levels; a page's angle; the middle level (the pages' middle row)
       const P = picker ? `create-${KEY}` : KEY; // its saved choices' and its ids' prefix
-      const { saved, save } = viewStore(`${P}-`, !picker, { mode: "view", range: "range", slicing: "slicing", cut: "cut" }); // (on the Colors page, its switches' shared: see viewStore)
+      const { saved, save } = viewStore(`${P}-`, sharedPrefix(picker), { mode: "view", range: "range", slicing: "slicing", cut: "cut" }); // (its switches' shared: see viewStore)
       let range = saved("range") === "print" && press ? "print" : "screen", fit = sys.fit(range); // (as the OKLCH view's)
       loadPrintTable(); // for the empty cells' CMYK
       const wrap = (k) => ((k % PAGES) + PAGES) % PAGES, opposite = (k) => (k + PAGES / 2) % PAGES;
@@ -7197,23 +7198,14 @@
         + `<div class="view-switch" role="group" aria-label="Range">`
         + `<button type="button" data-range="screen" title="Screen. The system's colours the widest screens show (Rec. 2020), a screen that shows fewer clipping the rest">Screen</button>`
         + `<button type="button" data-range="print" title="Print. The system's colours the press prints (Japan Color 2011 Coated), as Wada's colours were printed">Print</button></div>`
-        + switchesInOrder(picker, optionSwitch("Slice", "slicing", SLICING), viewSwitches(`${P}-view`)) + optionSwitch("Cut", "cut", CUT);
+        + viewSwitches(`${P}-view`) + optionSwitch("Slice", "slicing", SLICING) + optionSwitch("Cut", "cut", CUT);
       const option = (key) => modes.querySelector(`[data-option="${key}"]`);
       const cutOption = option("cut"), slicingOption = option("slicing");
       layout.append(disc, control, caption, modes);
       box.append(panel, layout);
       let solid = null, solidFrom = null, cameraLater = null, cut = "top"; // the 3D view's (makeOklchSolid); where the last one was seen from; the camera to turn it to once made (see adopt)
-      // The view's choices (Flat's, 2D's, the tones', 3D's), saved per view, each until chosen as the old
-      // switches had it: the surface smooth, Wada's colours as dots; none, the same alone; cells, as the cells
-      // switch said (and in 3D, smooth, smooth walls).
-      const oldSurface = saved("surface"), [cellsBg, cellsWada] = OLD_CELLS[saved("empty")] ?? OLD_CELLS.dots;
-      const prefs = viewPrefs(saved, save, !picker ? sharedDefaults : (view) => {
-        const smooth = oldSurface === "smooth" || oldSurface === "grid";
-        if (view === "3d" && !oldSurface && !saved("empty")) return { space: "real", bg: "walls", strength: "full", wada: "grid" }; // smooth walls until chosen
-        if (view === "3d") return { space: "real", bg: smooth ? "walls" : oldSurface === "none" ? "none" : cellsBg, strength: "full", wada: smooth || oldSurface === "none" ? "grid" : cellsWada };
-        if (view === "tones") return { space: "real", bg: cellsBg, strength: "full", wada: cellsWada };
-        return { space: "real", bg: smooth ? "smooth" : oldSurface === "none" ? "none" : cellsBg, strength: "full", wada: smooth || oldSurface === "none" ? "dots" : cellsWada };
-      });
+      // The view's choices (Flat's, 2D's, the tones', 3D's), saved per view.
+      const prefs = viewPrefs(saved, save, sharedDefaults);
       let opt = { space: "real", bg: "grid", strength: "full", wada: "grid" }; // (set by setMode)
 
       // The info panel, for one of Wada's colours or for the system's own colour in an empty cell.
@@ -8160,14 +8152,10 @@
         for (const key of ["space", "strength", "wada"]) pressed(modes, key, opt[key]);
         pressed(modes, "bg", opt.bg);
         pressed(modes, "bg3", opt.bg);
-        // (The tone map has no space, nor a smooth background: on the Colors page, their switches stay, off,
-        // in their places; in Create's picker, they're hidden.)
+        // (The tone map has no space, nor a smooth background: their switches stay, off, in their places.)
         const tones = view === "tones", spaceOption = option("space"), smoothChoice = modes.querySelector('[data-bg="smooth"]');
-        if (picker) spaceOption.hidden = smoothChoice.hidden = tones;
-        else {
-          spaceOption.title = tones ? "The tone map is a diagram, with no space to choose" : "";
-          for (const b of [...spaceOption.querySelectorAll("button"), smoothChoice]) b.disabled = tones;
-        }
+        spaceOption.title = tones ? "The tone map is a diagram, with no space to choose" : "";
+        for (const b of [...spaceOption.querySelectorAll("button"), smoothChoice]) b.disabled = tones;
         option("bg").hidden = view === "3d";
         option("bg3").hidden = view !== "3d";
         if (view === "3d" && opt.bg === "solid") { control.dataset.peel = ""; peelControl.place(peel); }
@@ -8214,14 +8202,14 @@
         pressed(modes, "slicing", slicing);
         peel = savedPeel(saved);
         solid?.peel(peel);
-        const at = cameraAt(80); // (its solid's start)
+        const at = !picker && cameraAt(80); // (its solid's start)
         if (at) solidFrom = { ...solidFrom, ...at };
         setMode(savedMode());
         if (at && solid) solid.restore({ ...solid.state(), ...at });
         else cameraLater = at; // (its solid still being made)
       };
       const camera = () => cameraOf(solid?.state() ?? solidFrom, 80);
-      return picker ? { box, numbers } : { box, adopt, camera };
+      return { box, numbers, adopt, camera };
     }
 
     // For the two solids in 3D (Ostwald's and OKLCH's), drawn with WebGL 2: a program from its two shaders;
