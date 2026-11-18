@@ -3590,12 +3590,15 @@
       for (const b of box.querySelectorAll("[data-shape]")) b.disabled = few || !SHAPES[b.dataset.shape](n);
       // The main colour's squares, made again (the focus kept on the same one) as the colours change.
       const focus = focusIn(box), mains = box.querySelector(".main-colours"), offMain = few || !(layout.shape === "line" || layout.shape === "ground");
+      // The one chosen, clicked again, none (as None; not on a ground, which always has one).
+      const ground = layout.shape === "ground";
       mains.replaceChildren(...picked.map((c, i) => {
-        const b = Object.assign(document.createElement("button"), { type: "button", title: `${c.name} as the main colour` });
+        const again = !ground && layout.main === i;
+        const b = Object.assign(document.createElement("button"), { type: "button", title: again ? `${c.name} as the main colour (click for none)` : `${c.name} as the main colour` });
         b.dataset.main = i;
-        b.setAttribute("aria-label", b.title);
+        b.setAttribute("aria-label", `${c.name} as the main colour`);
         b.append(chipOf(c));
-        b.addEventListener("click", () => setLayout((l) => (l.main = c)));
+        b.addEventListener("click", () => setLayout((l) => (again ? delete l.main : (l.main = c))));
         return b;
       }));
       pressed(box, "main", layout.main == null ? "none" : String(layout.main));
