@@ -1010,6 +1010,8 @@
     .prose .examples .blocks[data-frame="line"][data-size="2"] { width: 7.5rem; }
     .prose .examples .blocks[data-frame="line"]:not([data-size="2"]) { width: calc(3rem * var(--ar)); max-width: 100%; } /* squares as three's (a scale of seven) */
     .prose .examples .blocks.cross { width: 6rem; }
+    .prose .examples .blocks[data-size="amounts"] { width: 9rem; }
+    .prose .examples .outline-sample svg { display: block; width: 4.5rem; height: 4.5rem; }
     .prose .examples .blocks.stack { width: 4.5rem; }
     .prose .examples p { align-self: start; max-width: 10.5rem; margin: 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.45; text-align: left; text-wrap: pretty; } /* as figure captions: the block centred, the text left */
   </style>
@@ -1290,7 +1292,10 @@
         <h4 id="guidance-1934">Ten kinds, in 1934</h4>
         <p>His earlier booklet, of 1934, sorts harmony another way, into ten kinds, two kinds in five tones each.</p>
         <ul>
-          <li><p><strong>One family.</strong> Colours of one family, changing gradually, which he likens to modulation in music. A family means neighbouring colours, not one colour. His example is a kimono outfit, a sky-blue haori, a kimono with a touch of ultramarine, an obi greener than sky blue and a yellowish-green collar.</p></li>
+          <li><p><strong>One family.</strong> Colours of one family, changing gradually, which he likens to modulation in music. A family means neighbouring colours, not one colour. His example is a kimono outfit, a sky-blue haori, a kimono with a touch of ultramarine, an obi greener than sky blue and a yellowish-green collar.</p>
+            <ul class="examples">
+              <li><div data-colors="Salvia Blue|Olympic Blue|Calamine Blue|Yellow Green" data-amounts="6|6|3|1"></div> <p>His outfit in colours from the book, our choice, a Salvia Blue haori (the book's sky blue), a bluer Olympic Blue kimono, a greener Calamine Blue obi and a Yellow Green collar.</p></li>
+            </ul></li>
           <li><p><strong>Wholly unlike.</strong> Colours of entirely different quality. The hardest kind, but the most rewarding.</p>
             <ul class="examples">
               <li><a data-combination="141"></a> <p>Orange, Dark Tyrian Blue and Yellow Green.</p></li>
@@ -1331,42 +1336,101 @@
             </ul></li>
           <li><p><strong>Give the colours different areas.</strong> The book shows every colour the same size only for convenience. Equal areas balance only when the colours are equally strong, so give the weak tones the large areas and the strong ones the small.</p>
             <ul class="examples">
-              <li><a data-season="7"></a> <p>A weak Light Glaucous Blue on the large area, a strong Red on a small one.</p></li>
+              <li><a data-combination="120"></a> <p>As the book shows it, a weak Cameo Pink and a strong Pompeian Red at equal areas.</p></li>
+              <li><div data-colors="Cameo Pink|Pompeian Red" data-amounts="5|1"></div> <p>The same two, the weak Cameo Pink large and the strong Pompeian Red small.</p></li>
+              <li><a data-season="7"></a> <p>On one of his cards, a weak Light Glaucous Blue on the large area, a strong Red on a small one.</p></li>
             </ul></li>
-          <li><p><strong>Try the amounts.</strong> Lay cut white or grey paper over a combination, to change each colour's shape and size. The book came with a sheet of cut-out papers of several shapes for this.</p>
-            <p>For a kimono, lay a triangle over three colours, so that its tip gives the collar, the middle colour the kimono and the last the obi. For more colours, cut papers of your own, and count the white of the mount as one more colour.</p></li>
-          <li><p><strong>Find the main colour.</strong> On the seasonal cards, the largest colour, on top, is the main one, holding the rest together. In actual dress a small one often takes that role, such as the obi, the collar, a hat, gloves or a handbag. Where is the centre of the combination? That is the question (see <a href="#guidance/cards">his second card</a>).</p></li>
+          <li><p><strong>Find the main colour.</strong> On the seasonal cards, the largest colour, on top, is the main one, holding the rest together.</p>
+            <p>In actual dress a small one often takes that role, such as the obi, the collar, a hat, gloves or a handbag. Where is the centre of the combination? That is the question (see <a href="#guidance/cards">his second card</a>).</p></li>
+          <li><p><strong>Try the amounts.</strong> Lay cut white or grey paper over a combination, to change each colour's shape and size. The book came with a sheet of cut-out papers of several shapes for this. Wada sets no ratio, so the amounts are yours to try.</p>
+            <p>For a kimono, lay a triangle over three colours, so that its tip gives the collar, the middle colour the kimono and the last the obi. For more colours, cut papers of your own, and count the white of the mount as one more colour.</p>
+            <ul class="examples">
+              <li><a data-combination="229"></a> <p>Three colours at equal areas, as the book shows them.</p></li>
+              <li><div data-colors="Neutral Gray|Deep Slate Olive|Golden Yellow" data-amounts="1|10|4"></div> <p>The same in kimono amounts, a sliver of Neutral Gray for the collar, Deep Slate Olive for the kimono and Golden Yellow for the obi.</p></li>
+            </ul>
+            <p>On this site, <a href="#create">Create</a> does the same with its switches. Main draws one colour large and the others as small bands, as on the seasonal cards, and Auto gives the large area to the weakest colour.</p></li>
+          <li><p><strong>Allow for size.</strong> A combination that works in small chips looks paler and weaker on a large object (Wada), so judge it at the size it will be used (see <a href="#guidance/colour">Choosing a colour</a>).</p></li>
           <li><p><strong>Glossy materials help</strong> (Chevreul). Colours go together better on glossy materials, such as silk or glass, than on matt ones, such as cotton or wool. Two bright colours, too, go together better than duller ones.</p></li>
         </ul>
 
         <h2 id="guidance-making">Making your own</h2>
-        <p>Wada also meant his readers to make combinations of their own. His seasonal cards were movable, opening like a fan, so that anyone could try combinations besides his. On this site, <a href="#create">Create</a> lays out your own as in the book.</p>
+        <p>Wada also meant his readers to make combinations of their own. His seasonal cards were movable, opening like a fan, so that anyone could try combinations besides his. On this site, <a href="#create">Create</a> lays out your own as in the book, or in other shapes, with one colour large if you like.</p>
+        <p>Put together, his advice gives these steps.</p>
         <ul>
           <li><p><strong>Start from one hue,</strong> in its light and dark tones (see <a href="#guidance/like">Like colours</a> and <a href="#guidance/bands">Graded bands</a>). It can hardly go wrong.</p>
             <ul class="examples">
               <li><a data-combination="139"></a> <p>One blue, the dark Deep Indigo and the light Salvia Blue, with Neutral Gray.</p></li>
             </ul></li>
-          <li><p><strong>Then try different hues,</strong> with care (see <a href="#guidance/different">Different hues</a> and <a href="#guidance/complementary">Complementary</a>).</p></li>
+          <li><p><strong>Balance lightness and saturation.</strong> Among vivid colours put a muted one, among pale ones a deep one, and among dark ones some lighter (see <a href="#guidance/together">What makes colours go together</a>).</p></li>
+          <li><p><strong>Let the strengths differ.</strong> When every colour is as strong as the others, the result is safe but ordinary, as on <a href="#guidance/cards">his first card</a>.</p></li>
+          <li><p><strong>Then try different hues,</strong> with care. Where they touch, weigh each colour's lightness and strength (see <a href="#guidance/different">Different hues</a> and <a href="#guidance/complementary">Complementary</a>).</p></li>
+          <li><p><strong>Where two clash,</strong> put white, grey or black between them (see below).</p></li>
+          <li><p><strong>Then the amounts.</strong> Decide which colour leads, and give the weak tones the large areas (see <a href="#guidance/using">Using a combination</a>).</p></li>
         </ul>
 
         <h3 id="guidance-neutrals">White, grey or black between colours</h3>
         <p>Where two colours clash side by side, put white, grey or black between them, minding each colour's saturation and lightness. Which to use follows the rules of Chevreul, to Wada the leading authority on colour contrast and harmony.</p>
+        <p>Which one depends on the two colours.</p>
         <ul>
-          <li><strong>Red and yellow.</strong> White or grey, not black.</li>
-          <li><strong>Red and blue.</strong> Grey or black, not white.</li>
-          <li><strong>Blue and yellow.</strong> White or black, not grey.</li>
-          <li><strong>Yellow and orange.</strong> White or grey, not black.</li>
-          <li><strong>Blue and purple.</strong> White or black, not grey.</li>
-          <li><strong>Orange and green.</strong> Black.</li>
-          <li><strong>Purples.</strong> Grey.</li>
-          <li><strong>Purple and green.</strong> White.</li>
-          <li><strong>Black</strong> never clashes with two bright colours, and mostly suits dark purples and blues. With one bright colour and one dark, it pleases less.</li>
-          <li><strong>Grey</strong> suits two bright colours, and never clashes even with two dull ones. With dull, dark blues or purples, black is better. With a bright colour and a dark one, grey is better than white, and over large areas black also works.</li>
-          <li><strong>Outlines.</strong> On a pale ground, draw patterns in deep tones, outlined in black, grey or a colour deeper still. A pattern paler than its ground takes a white or grey outline. A pattern in light and dark steps of one colour takes a white or grey outline on a deep ground, and a deep one on a pale ground.</li>
+          <li><p><strong>Red and yellow.</strong> White or grey, not black.</p>
+            <ul class="examples">
+              <li><a data-combination="228"></a> <p>Grey between them in the book, Carmine Red and Pale Lemon Yellow.</p></li>
+            </ul></li>
+          <li><p><strong>Red and blue.</strong> Grey or black, not white.</p>
+            <ul class="examples">
+              <li><div data-colors="Spectrum Red|Black|Blue"></div> <p>Black between Spectrum Red and Blue.</p></li>
+            </ul></li>
+          <li><p><strong>Blue and yellow.</strong> White or black, not grey.</p>
+            <ul class="examples">
+              <li><div data-colors="Blue|White|Yellow"></div> <p>White between Blue and Yellow.</p></li>
+            </ul></li>
+          <li><p><strong>Yellow and orange.</strong> White or grey, not black.</p>
+            <ul class="examples">
+              <li><div data-colors="Yellow|Neutral Gray|Orange"></div> <p>Neutral Gray between Yellow and Orange.</p></li>
+            </ul></li>
+          <li><p><strong>Blue and purple.</strong> White or black, not grey.</p>
+            <ul class="examples">
+              <li><div data-colors="Blue|White|Violet"></div> <p>White between Blue and Violet.</p></li>
+            </ul></li>
+          <li><p><strong>Orange and green.</strong> Black.</p>
+            <ul class="examples">
+              <li><div data-colors="Orange|Black|Green"></div> <p>Black between Orange and Green.</p></li>
+            </ul></li>
+          <li><p><strong>Purples.</strong> Grey.</p>
+            <ul class="examples">
+              <li><div data-colors="Violet|Neutral Gray|Red Violet"></div> <p>Neutral Gray between Violet and Red Violet.</p></li>
+            </ul></li>
+          <li><p><strong>Purple and green.</strong> White.</p>
+            <ul class="examples">
+              <li><div data-colors="Violet|White|Green"></div> <p>White between Violet and Green.</p></li>
+            </ul></li>
         </ul>
-        <ul class="examples">
-          <li><a data-combination="228"></a> <p>Grey between a red and a yellow, Carmine Red and Pale Lemon Yellow.</p></li>
-          <li><a data-combination="144"></a> <p>Black between two bright colours, Orange and Rosolane Purple.</p></li>
+        <p>Black and grey each suit some colours more than others.</p>
+        <ul>
+          <li><p><strong>Black</strong> never clashes with two bright colours, and mostly suits dark purples and blues. With one bright colour and one dark, it pleases less.</p>
+            <ul class="examples">
+              <li><a data-combination="144"></a> <p>Black between two bright colours, Orange and Rosolane Purple.</p></li>
+            </ul></li>
+          <li><p><strong>Grey</strong> suits two bright colours, and never clashes even with two dull ones. With dull, dark blues or purples, black is better. With a bright colour and a dark one, grey is better than white, and over large areas black also works.</p>
+            <ul class="examples">
+              <li><div data-colors="Orange|Neutral Gray|Deep Indigo"></div> <p>Neutral Gray between a bright Orange and a dark Deep Indigo.</p></li>
+            </ul></li>
+        </ul>
+        <p>The same goes for outlines in a design.</p>
+        <ul>
+          <li><p><strong>On a pale ground,</strong> draw patterns in deep tones, outlined in black, grey or a colour deeper still.</p>
+            <ul class="examples">
+              <li><div data-outline="Ivory Buff|Black|Carmine Red"></div> <p>A deep red pattern, Carmine Red, on a pale ground, outlined in black.</p></li>
+            </ul></li>
+          <li><p><strong>A pattern paler than its ground</strong> takes a white or grey outline.</p>
+            <ul class="examples">
+              <li><div data-outline="Deep Lyons Blue|White|Salvia Blue"></div> <p>A pale blue pattern on a deep ground, outlined in white.</p></li>
+            </ul></li>
+          <li><p><strong>A pattern in light and dark steps of one colour</strong> takes a white or grey outline on a deep ground, and a deep one on a pale ground.</p>
+            <ul class="examples">
+              <li><div data-outline="Deep Indigo|White|Olympic Blue|Salvia Blue"></div> <p>Steps of one blue on a deep ground, outlined in white.</p></li>
+              <li><div data-outline="Pale King's Blue|Deep Indigo|Olympic Blue|Salvia Blue"></div> <p>The same steps on a pale ground, outlined in a deep blue.</p></li>
+            </ul></li>
         </ul>
         <p>By Wada's own account, though, taste has moved on since Chevreul, so not every rule still holds (see <a href="#guidance/outlook">Taste changes</a>).</p>
         <p class="remark"><strong>Since then:</strong> two colours that meet with nothing between them change each other by contrast along the edge, and a line or gap between them stops it, which may be one reason this works (see <a href="#theory/contrast">Contrast</a>).</p>
@@ -1377,7 +1441,8 @@
           <a data-season="1"></a>
           <div>
             <p><button class="color-ref">Seashell Pink</button> with <button class="color-ref">White</button>, <button class="color-ref">Sulphur Yellow</button>, <button class="color-ref">Glaucous Green</button> and <button class="color-ref">Grayish Lavender - A</button>.</p>
-            <p>All are light and, apart from the white, about as strong as one another, with little difference in hue, lightness or saturation. None helps or sets off another, and each just asserts itself, so it's hard to tell which is the main colour. Ordinary, though safe, the kind anyone makes. That is a reading in the abstract, though, and in use it might be judged otherwise.</p>
+            <p>All are light and, apart from the white, about as strong as one another, with little difference in hue, lightness or saturation. None helps or sets off another, and each just asserts itself, so it's hard to tell which is the main colour.</p>
+            <p>Ordinary, though safe, the kind anyone makes. That is a reading in the abstract, though, and in use it might be judged otherwise.</p>
           </div>
         </div>
         <div class="card-reading">
@@ -2969,9 +3034,10 @@
         }
         thumbOf(slot, combo).setAttribute("aria-label", `${season ? "Seasonal combination" : "Combination"} ${combo.number}`);
       }
-      // A combination made for the page, to show what not to do or a scale (data-colors, its colours' names):
-      // drawn in a row, as the book's 2 and 3 colours are, but with no number and no link (its caption says
-      // what it is).
+      // A combination made for the page, to show what not to do, a scale or a use (data-colors, its colours'
+      // names): drawn in a row, as the book's 2 and 3 colours are, but with no number and no link (its caption
+      // says what it is). With data-amounts, each colour as wide as its share, in a strip three times as
+      // wide as it's tall.
       for (const slot of document.querySelectorAll(".prose .examples [data-colors]")) {
         const colors = slot.dataset.colors.split("|").map((name) => byName.get(name));
         if (colors.includes(undefined)) {
@@ -2981,7 +3047,26 @@
         slot.className = "thumb made";
         const blocks = blocksFor({ colors }, () => document.createElement("div"), { dir: "row", shape: "line", main: null });
         blocks.setAttribute("aria-hidden", "true");
+        if (slot.dataset.amounts) {
+          blocks.style.gridTemplateColumns = slot.dataset.amounts.split("|").map((a) => `minmax(0, ${Number(a)}fr)`).join(" ");
+          blocks.style.aspectRatio = 3;
+          blocks.style.setProperty("--ar", 3);
+          blocks.dataset.size = "amounts"; // (not a pair's width: see the CSS)
+        }
         slot.append(blocks);
+      }
+      // An outline in a design (data-outline: its ground's, outline's and pattern's colours, and the pattern's
+      // inner step's, if it has one): a diamond on the ground, outlined.
+      for (const slot of document.querySelectorAll(".prose .examples [data-outline]")) {
+        const [ground, line, pattern, inner] = slot.dataset.outline.split("|").map((name) => byName.get(name));
+        if (!ground || !line || !pattern) {
+          console.error(`No colour among "${slot.dataset.outline}"`);
+          continue;
+        }
+        slot.className = "outline-sample";
+        slot.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="${ground.css}"/>`
+          + `<path d="M50 16 84 50 50 84 16 50Z" fill="${pattern.css}" stroke="${line.css}" stroke-width="5" stroke-linejoin="round"/>`
+          + (inner ? `<path d="M50 34 66 50 50 66 34 50Z" fill="${inner.css}"/>` : "") + "</svg>";
       }
       for (const link of document.querySelectorAll(".prose a[data-layout]")) {
         // The system, shown as the link opens the page; with data-page, sliced through the axis in 2D at

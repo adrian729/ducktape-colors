@@ -143,7 +143,7 @@ Wada presents these as an excerpt from Chevreul, "the leading authority (第一�
 - **Grey:**
   - it goes well with two bright colours, and never clashes even with two dull ones;
   - with dull blues or purples, black works better than grey;
-  - with a bright and a dark colour, white works better than grey, and when both cover large areas, black can be used instead.
+  - with a bright and a dark colour, grey works better than white would, and when both cover large areas, black can be used instead.
 - **Which neutral to put between two colours:**
   - for red and yellow, anything but black;
   - for red and blue, anything but white;
@@ -155,7 +155,7 @@ Wada presents these as an excerpt from Chevreul, "the leading authority (第一�
   - on a pale ground, draw letters and patterns in deep tones, outlined in black, grey or a colour deeper than the pattern;
   - a pattern paler than its ground takes a white or grey outline;
   - a one-colour pattern built from light and dark steps takes a white or grey outline on a deep ground, and a deep outline on a pale one.
-- **Material:** colours on glossy materials such as glass or silk harmonise better than on matte ones such as cotton or wool. Two glossy colours together look better still.
+- **Material:** two colours that both have brilliance (光輝) harmonise better. And colours on glossy materials such as glass or silk harmonise better than on matte ones such as cotton or wool.
 
 **His caveat (pp. 26–28):**
 
