@@ -79,13 +79,13 @@
     .combo-subnav [aria-disabled="true"] { opacity: 0.45; }
 
     main { padding: 1.5rem; }
-    #colors-view { display: grid; gap: 2rem; }
-    /* Its layouts (the sub-navigation): the families as grids or rows, or the colour systems, the one shown (data-system: the one chosen, once it's made) */
-    #colors-view[data-show="systems"] > section,
-    #colors-view:not([data-show="systems"][data-system="oklch"]) > .wheel-box,
-    #colors-view:not([data-show="systems"][data-system="ostwald"]) > .ostwald-box,
-    #colors-view:not([data-show="systems"][data-system="munsell"]) > .munsell-box,
-    #colors-view:not([data-show="systems"][data-system="pccs"]) > .pccs-box { display: none; }
+    /* Wada colours: the families as grids, rows or cards (the sub-navigation's layouts). */
+    #colors-view, #systems-view { display: grid; gap: 2rem; }
+    /* Colour systems: the one shown (data-system: the one chosen, once it's made). */
+    #systems-view:not([data-system="oklch"]) > .wheel-box,
+    #systems-view:not([data-system="ostwald"]) > .ostwald-box,
+    #systems-view:not([data-system="munsell"]) > .munsell-box,
+    #systems-view:not([data-system="pccs"]) > .pccs-box { display: none; }
     /* A group's name above it: the book's colour families, the months of the seasonal combinations. */
     .group-heading { margin-bottom: 1rem; font-size: 0.875rem; font-weight: 500; }
     .group-heading span { margin-left: 1ch; color: var(--muted); font-weight: 400; } /* e.g. its numbers */
@@ -125,9 +125,21 @@
        one line, in columns that line up from row to row (widest name: 23 characters, CMYK: 20). */
     .swatch .in-rows, [data-show="rows"] .swatch .in-grid { display: none; }
     [data-show="rows"] .swatch .in-rows { display: grid; grid-template-columns: 26ch 24ch auto; }
+    /* Cards layout: each colour's card, as the dialog shows it but without its combinations (its swatch,
+       its name with a square of it, its CMYK, its OKLCH with a copy button), framed, as wide as the
+       dialog at least; the swatch opens the dialog. */
+    .grid .card-body { display: none; }
+    [data-show="cards"] .grid { grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--info) + 4.5rem), 100%), 1fr)); gap: 1.5rem; }
+    [data-show="cards"] .grid > li { border: 1px solid var(--line); }
+    [data-show="cards"] .swatch { aspect-ratio: auto; height: 12rem; }
+    [data-show="cards"] .swatch .in-grid { display: none; }
+    [data-show="cards"] .card-body { display: block; }
+    .card-body h3 { font-size: 1.25rem; font-weight: 500; margin-bottom: 0.5rem; }
 
     /* Combinations, laid out as in the book: 2 colours side by side (6:5 each), 3 squares in a row,
-       4 colours as a cross of 2:1 rectangles (top, left, right, bottom). The colours touch. */
+       4 colours as a cross of 2:1 rectangles (top, left, right, bottom), the seasonal cards' colours in a
+       column, the top one large; or as Create's switches say. Each colour's place, and the whole's shape,
+       are set by the script (see layouts, blocksOf). The colours touch. */
     #combinations-view { display: grid; gap: 4rem; }
     .combos {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 2rem 1.5rem;
@@ -138,22 +150,16 @@
       color: var(--muted); font-size: 0.8rem; text-decoration: none;
     }
     a.combo-number:hover, a.combo-number:focus-visible { color: var(--fg); text-decoration: underline; }
-    .blocks { display: grid; grid-template-rows: minmax(0, 1fr); } /* rows never grow to fit a colour's name */
-    .blocks[data-size="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); aspect-ratio: 12 / 5; }
-    .blocks[data-size="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); aspect-ratio: 3 / 1; }
-    .blocks[data-size="4"] {
-      grid-template: ". top top ." auto "left left right right" auto ". bottom bottom ." auto
-        / minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); /* columns never grow to fit a long name */
-    }
-    /* Each of a cross's colours is 2 columns by 1 row: on a whole number of pixels when the cross is as
-       wide as a multiple of 4px, else they would be painted a pixel apart. */
-    .blocks[data-size="4"] { grid-template-rows: repeat(3, minmax(0, 1fr)); aspect-ratio: 4 / 3; width: round(down, 100%, 4px); }
-    .blocks[data-size="4"] > :nth-child(1) { grid-area: top; }
-    .blocks[data-size="4"] > :nth-child(2) { grid-area: left; }
-    .blocks[data-size="4"] > :nth-child(3) { grid-area: right; }
-    .blocks[data-size="4"] > :nth-child(4) { grid-area: bottom; }
+    .blocks { display: grid; } /* its tracks never grow to fit a colour's name (minmax(0, …), see blocksOf) */
+    /* A cross's and the shapes of 3's colours are 2 columns by 1 row: on a whole number of pixels when the
+       whole is as wide as a multiple of 4px, else they would be painted a pixel apart. */
+    .blocks.cross { width: round(down, 100%, 4px); }
     .blocks > * { background: var(--color); }
-    .blocks .swatch { aspect-ratio: auto; height: 100%; padding: 0.5rem; }
+    .blocks[data-shape="ground"] > :not(.ground) { z-index: 1; } /* on the ground, whatever their order */
+    /* A ground's name at its top, on one line, clear of the patches. */
+    .blocks .ground.swatch { place-items: start center; padding-top: 0.25rem; }
+    .blocks .ground.swatch span { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .blocks .swatch { aspect-ratio: auto; height: 100%; padding: 0.5rem; container-type: size; } /* measured: see below */
     .blocks .swatch span { white-space: normal; text-align: center; } /* the colour name */
     /* Sub-navigation choice: only the combinations with that many colours (of yours too: see below). */
     #combinations-view[data-show="2"] > :not([data-size="2"], .yours),
@@ -166,8 +172,8 @@
     #combinations-view[data-show="3"] > .yours:not(:has(li[data-size="3"]), :has(.group-heading button)),
     #combinations-view[data-show="4"] > .yours:not(:has(li[data-size="4"]), :has(.group-heading button)) { display: none; }
     /* Your combinations (saved in Create), before the book's: as its, under their own heading; each
-       number opens it in Create, and the × after it removes it. 5 to 7 colours are stacked, as in
-       Create, as tall as a cross. */
+       number opens it in Create, and the × after it removes it. Each drawn as it was in Create (see
+       the frames below). */
     /* A combination's number with an icon button at the other end of its line: your combinations' ×
        (remove), the ＋ of the book's under Create's composition (use it there). */
     .combo-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
@@ -177,7 +183,6 @@
     .combo-head button:disabled { opacity: 0.35; cursor: default; color: var(--muted); }
     .combo-head svg { width: 0.75rem; height: 0.75rem; fill: none; stroke: currentColor; stroke-width: 1.25; }
     @media (pointer: coarse) { .combo-head button { padding: 0.75rem; margin: -0.75rem; } } /* a finger's room, nothing moved */
-    .yours .blocks.stack { width: calc(round(down, 100%, 4px) * 0.5625); }
     .yours .group-heading button { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
     .yours .group-heading button:is(:hover, :focus-visible) { color: var(--fg); text-decoration: underline; }
     /* ... and only that month's seasonal combinations. */
@@ -188,13 +193,13 @@
     #seasons-view[data-show="9"] > :not([data-month="9"]), #seasons-view[data-show="10"] > :not([data-month="10"]),
     #seasons-view[data-show="11"] > :not([data-month="11"]), #seasons-view[data-show="12"] > :not([data-month="12"]) { display: none; }
 
-    /* Seasonal combinations (Volume 2), as in the book: 3 to 7 colours stacked top to bottom, equal. */
-    .blocks.stack { grid-template-rows: repeat(var(--n), minmax(0, 1fr)); grid-template-columns: minmax(0, 1fr); aspect-ratio: 3 / 4; }
-    /* A band can be thin (7 colours in a narrow column): there its name is set smaller and tighter, so
-       two lines still fit inside it (each band measures its own height). */
-    .blocks.stack .swatch { container-type: size; padding-block: 0; } /* measured: the band's height */
-    @container (height < 2.25rem) { .blocks.stack .swatch span { font-size: 0.7rem; line-height: 1.15; } }
-    @container (height < 1.625rem) { .blocks.stack .swatch span { font-size: 0.625rem; line-height: 1.05; } }
+    /* A band can be thin (a seasonal card's small ones, 7 colours in a narrow column): there its name is
+       set smaller and tighter, so two lines still fit inside it; where a colour is too narrow for a word
+       (a small band across a row, a patch on a ground), none (each colour measures itself). */
+    .blocks:is(.stack, .main) .swatch { padding-block: 0; }
+    @container (height < 2.25rem) { .blocks .swatch span { font-size: 0.7rem; line-height: 1.15; } }
+    @container (height < 1.625rem) { .blocks .swatch span { font-size: 0.625rem; line-height: 1.05; } }
+    @container (width < 4rem) { .blocks .swatch span { display: none; } }
     #seasons-view { display: grid; gap: 4rem; }
     .combos.seasons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     @media (min-width: 40rem) { .combos.seasons { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -223,8 +228,8 @@
     @media (width < 46rem) { #combination-view > .combo-figure:has(> .combo-values) > .plate { margin-inline: 3.5rem; } }
     .combo-ref { display: grid; justify-items: start; align-content: start; }
     .combo-ref > .blocks { width: 12rem; }
-    .combo-ref > .blocks[data-size="4"] { width: 9rem; }
-    .combo-ref > .blocks.stack { width: 8rem; }
+    .combo-ref > .blocks.cross { width: 9rem; }
+    .combo-ref > .blocks[data-frame="tall"] { width: 6rem; }
     .related { display: grid; gap: 2.5rem; } /* the related combinations of one kind, in groups */
     /* In a related combination, a dot next to each colour it shares with this one, outside the colours
        (on the page, so it adds no colour to them): under it in a row of 2 or 3; in a cross, above the
@@ -234,10 +239,10 @@
       content: ""; position: absolute; top: calc(100% + 0.25rem); left: calc(50% - 0.1875rem);
       width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--fg);
     }
-    .blocks[data-size="4"] > .shared:nth-child(1)::after { top: auto; bottom: calc(100% + 0.25rem); }
-    .blocks[data-size="4"] > .shared:is(:nth-child(2), :nth-child(3))::after { top: calc(50% - 0.1875rem); }
-    .blocks[data-size="4"] > .shared:nth-child(2)::after { left: auto; right: calc(100% + 0.25rem); }
-    .blocks[data-size="4"] > .shared:nth-child(3)::after { left: calc(100% + 0.25rem); }
+    .blocks.cross > .shared:nth-child(1)::after { top: auto; bottom: calc(100% + 0.25rem); }
+    .blocks.cross > .shared:is(:nth-child(2), :nth-child(3))::after { top: calc(50% - 0.1875rem); }
+    .blocks.cross > .shared:nth-child(2)::after { left: auto; right: calc(100% + 0.25rem); }
+    .blocks.cross > .shared:nth-child(3)::after { left: calc(100% + 0.25rem); }
     .blocks.stack > .shared::after { top: calc(50% - 0.1875rem); left: auto; right: calc(100% + 0.25rem); }
     /* The wheel page: the wheel beside the combination (the colour under the pointer below it); on
        narrow screens under it, without the colour's info (tapping a colour opens it). */
@@ -278,7 +283,7 @@
       --middle: min(100%, 36rem);
       display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) var(--middle) minmax(0, 1fr); gap: 0;
     }
-    #season-view > .combo-figure:has(> .combo-values) { --middle: min(100%, 20rem); }
+    #season-view > .combo-figure:has(> .combo-values) { --middle: min(100%, 16rem); } /* a card as tall as it was at 3:4 */
     :is(#combination-view, #season-view) > .combo-figure:has(> .combo-values) > * { grid-column: 2; }
     :is(#combination-view, #season-view) > .combo-figure > .combo-values { grid-column: 1 / -1; justify-self: center; max-width: 100%; }
     .combo-info.row { column-gap: 2.5rem; } /* columns as wide as the widest */
@@ -307,8 +312,9 @@
     .actions button:disabled { color: var(--muted); opacity: 0.45; cursor: default; text-decoration: none; }
 
     /* Create: compose a combination of 2 to 7 colours, laid out as in the book (2 to 4 as in Volume 1,
-       5 to 7 stacked as the seasonal combinations), the colours' values under them (under each colour
-       for 1 to 3, else in rows of blocks, as many to a row as fit), beside the colours to pick from (all of
+       5 to 7 in a column as the seasonal cards' frame) or as its switches say (see renderSwitches), the
+       colours' values under them (under each colour in a row of 2 or 3, else in rows of blocks, as many
+       to a row as fit), beside the colours to pick from (all of
        Wada's, or OKLCH's or Ostwald's views). Under the composition, the book's combinations with its
        colours (see renderRelated). On wide screens the two share the width equally, whatever the picker
        shows, each as tall as the screen below the header and scrolling on its own; on narrow ones, one
@@ -344,11 +350,24 @@
     .related-kind { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.75rem; }
     .create-related .combos + .related-kind { margin-top: 1.25rem; }
     .create-stage .combo-figure { width: 100%; }
-    /* A cross or a stack is centred in the composition's column, and under it its values' rows, the
+    /* Create's switches, for how the composition is drawn: a centred row above it, as the Colour systems page's
+       above the disc; the main colour's choices as squares of the colours (see renderSwitches). The
+       shapes' icons turned with the direction. */
+    .combo-switches { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.3rem; margin-bottom: 1.5rem; font-size: 0.7rem; }
+    .combo-switches .main-colours { display: contents; }
+    .combo-switches .chip { width: 0.8rem; height: 0.8rem; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 12%, transparent); } /* (a white one seen) */
+    .combo-switches[data-dir="column"] [data-shape] svg { rotate: 90deg; }
+    @media (width < 64rem) { .combo-switches { margin-bottom: -1rem; } } /* (the view's gap above the composition too) */
+    /* Any but a row of 2 or 3 is centred in the composition's column, and under it its values' rows, the
        message and the actions: as many values to a row as fit (in balanced rows, as on a combination's
        page), each 15.75rem (the widest's), one under another on narrow screens. */
-    .create-stage .blocks[data-size="4"] { width: round(down, min(100%, 30rem), 4px); margin-inline: auto; }
-    .create-stage .blocks.stack { width: calc(round(down, min(100%, 30rem), 4px) * 0.5625); margin-inline: auto; } /* as tall as the cross */
+    /* The colours' frame: a row in a line as wide as the column; any other at most 30rem wide (on a whole
+       number of 4px, see .cross), and a tall one as tall as a cross that wide. So in your combinations,
+       as wide as their column. */
+    :is(.create-stage, .yours) .blocks { --base: round(down, min(100%, var(--most, 100%)), 4px); width: var(--base); }
+    .create-stage .blocks { --most: 30rem; margin-inline: auto; }
+    :is(.create-stage, .yours) .blocks[data-frame="line"] { width: 100%; }
+    :is(.create-stage, .yours) .blocks[data-frame="tall"] { width: calc(var(--base) * 0.75 * var(--ar)); }
     .create-stage .combo-values { width: fit-content; max-width: 100%; margin-inline: auto; }
     .create-stage .combo-values > .section-label { contain: inline-size; } /* as wide as the values, not wider */
     .create-stage .combo-info.row[data-cols] { grid-template-columns: minmax(0, 1fr); }
@@ -361,12 +380,23 @@
     .create-stage { container-type: inline-size; }
     @container (width < 48rem) { .create-stage .combo-info[data-size="3"] { grid-template-columns: minmax(0, 1fr); } }
     @container (width < 32rem) { .create-stage .combo-info[data-size="2"] { grid-template-columns: minmax(0, 1fr); } }
-    .create-stage .blocks .swatch { touch-action: none; cursor: grab; } /* drag to reorder */
-    /* The colour selected for swapping or replacing, and the one a dragged colour would swap with. */
-    .create-stage .swatch:is([aria-pressed="true"], .drop-target) { box-shadow: inset 0 0 0 0.375rem var(--bg); }
-    .create-stage .dragging { position: relative; z-index: 1; cursor: grabbing; }
+    .create-stage .blocks .swatch { position: relative; touch-action: none; cursor: grab; } /* drag to reorder */
+    /* Every colour of the composition alike, whatever its shape or size: its name not in it (a band or a
+       patch may be too small for it, the ground's is under the patches) but in one line under them all
+       (see renderStage), kept as tall when empty so nothing moves. */
+    .create-stage .blocks .swatch span { display: none; }
+    .stage-name { min-height: 1.5em; margin: 0.625rem 0 0; font-size: 0.8rem; line-height: 1.5; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .create-stage .stage-name + .combo-values > .combo-info:first-child, .create-stage .stage-name + .combo-info { margin-top: 0.625rem; }
+    /* The colour selected for swapping or replacing, and the one a dragged colour would swap with: a ring
+       of the page's colour inside it, at most a fifth of its thinner side (a thin band stays seen). */
+    .create-stage .swatch:is([aria-pressed="true"], .drop-target)::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      box-shadow: inset 0 0 0 min(0.375rem, 20cqmin) var(--bg);
+    }
+    .create-stage .dragging { z-index: 2; cursor: grabbing; } /* (above a ground's patches too) */
     .blocks .empty { border: 1px dashed var(--muted); }
-    .blocks .empty + .empty { border-left: 0; }
+    .blocks[data-dir="row"] .empty + .empty { border-left: 0; }
+    .blocks[data-dir="column"] .empty + .empty { border-top: 0; }
     .picker { display: grid; gap: 1rem; align-content: start; } /* (on wide screens it is as tall as the screen) */
     .picker .grid { grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr)); }
     .picker .swatch span { opacity: 1; transform: none; } /* a picked colour's place in the combination */
@@ -377,7 +407,7 @@
     .detail-combos { margin-top: 1.25rem; white-space: normal; }
     .detail-combos .section-label { margin: 0 0 0.5rem; }
     .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; align-items: start; }
-    .thumbs.seasons { grid-template-columns: repeat(6, 1fr); }
+    .thumbs.seasons { grid-template-columns: repeat(4, 1fr); } /* the cards as printed: wide enough for their small bands to show */
     .thumbs + .section-label { margin-top: 1.25rem; }
     .thumb { display: block; color: var(--muted); font-size: 0.75rem; text-decoration: none; }
     .thumb:hover, .thumb:focus-visible { color: var(--fg); }
@@ -411,7 +441,7 @@
     .wheel.marking .wheel-bg { opacity: 0.15; }
     .wheel .marks { fill: none; stroke: var(--fg); stroke-width: 0.008; pointer-events: none; }
     .wheel .shape { fill: none; stroke: var(--fg); stroke-width: 0.004; stroke-opacity: 0.6; pointer-events: none; }
-    /* The Colors page's OKLCH layout, the wheel with its switches under a column to its right, as in the Ostwald view: Flat
+    /* The Colour systems page's OKLCH layout, the wheel with its switches under a column to its right, as in the Ostwald view: Flat
        (the wheel above), or 2D, a slice of OKLCH's solid, with its control in that column (the lightness
        levels, or the dial); and squares or dots. */
     .wheel-views {
@@ -419,14 +449,14 @@
       justify-self: stretch; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem 2rem;
     }
     .wheel-views > .wheel { grid-column: 2; width: var(--h); }
-    :is(#colors-view, .picker) .wheel-views > .wheel { margin-inline: calc(var(--h) * 0.25 / 2.4); } /* on the Colors page and in Create's picker, in a frame as wide as the other systems' discs (2.9 / 2.4 of its height), centred */
+    :is(#systems-view, .picker) .wheel-views > .wheel { margin-inline: calc(var(--h) * 0.25 / 2.4); } /* on the Colour systems page and in Create's picker, in a frame as wide as the other systems' discs (2.9 / 2.4 of its height), centred */
     .wheel .dot { cursor: pointer; outline: none; }
     .wheel .dot-hit { fill: transparent; } /* round the dot, as far as its neighbours leave room: easier to hover */
     .wheel :is(.dot-mark, .on-axis) { stroke: var(--line); stroke-width: 0.002; } /* as the Ostwald view's dots: pale ones show (and white, on the axis) */
     .wheel .gamut, :is(.wheel, .atlas-disc) .rim { fill: none; stroke: var(--muted); stroke-width: 0.003; pointer-events: none; }
     :is(.wheel, .atlas-disc) .rim { stroke-dasharray: 0.01 0.015; } /* the widest the slices go, for scale */
     .wheel .gamut { pointer-events: fill; cursor: pointer; } /* hovering the slice, off Wada's colours, shows its own colour */
-    /* The views (the Colors page's and Create's picker's): the background, OKLCH's own colours, as the switches say, smooth or each cell filled, on the canvas, at full strength or faded; the cells' borders a thin grey line, as the other systems' grids; the outline of what the range holds drawn in real space, round smooth, dots and none, and hovered on smooth (the colour exactly under the pointer) and the cells (that cell's colour), not on none (only Wada's colours) */
+    /* The views (the Colour systems page's and Create's picker's): the background, OKLCH's own colours, as the switches say, smooth or each cell filled, on the canvas, at full strength or faded; the cells' borders a thin grey line, as the other systems' grids; the outline of what the range holds drawn in real space, round smooth, dots and none, and hovered on smooth (the colour exactly under the pointer) and the cells (that cell's colour), not on none (only Wada's colours) */
     .wheel-views[data-bg] .wheel-bg { opacity: 1; }
     .wheel-views[data-bg][data-strength="faded"] .wheel-bg, .wheel-views[data-strength="faded"] .wheel :is(.cell-lines, .cell-dot) { opacity: 0.35; }
     .wheel-views:is([data-bg="griddot"], [data-bg="dots"], [data-bg="none"]) .wheel-bg { display: none; }
@@ -517,13 +547,13 @@
     .solid-dot::before { content: ""; position: absolute; inset: -0.45rem; } /* a bigger target */
     /* Under the control: small segmented switches, the view and its options (the Ostwald layout's, and the OKLCH one's). */
     .view-modes { grid-column: 3; grid-row: 2; justify-self: start; align-self: start; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; font-size: 0.7rem; }
-    /* On the Colors page and in Create's picker, the switches in a row of their own above the disc, centred, in the same place
+    /* On the Colour systems page and in Create's picker, the switches in a row of their own above the disc, centred, in the same place
        in every system (the disc's size, and the caption's length, change below them); on wide screens the disc smaller by that row */
-    :is(#colors-view, .picker) .view-modes { grid-column: 1 / -1; grid-row: 1; justify-self: center; justify-content: center; width: 0; min-width: 100%; }
-    :is(#colors-view, .picker) :is(.atlas-disc, .atlas-levels, .dial-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
-    :is(#colors-view, .picker) .view-caption { grid-row: 3; }
-    :is(#colors-view, .picker) :is(.wheel-box, .ostwald-box, .munsell-box) :is([data-option="slicing"], [data-option="wheel-slicing"]) { margin-right: calc(1.75em + 1px); } /* room for PCCS's third (the tones) in every system, so that the centred row doesn't move */
-    @media (min-width: 601px) { #colors-view :is(.atlas, .wheel-views) { --h: min(calc(100vh - 14.5rem), calc((100vw - 7rem) / 1.72)); } }
+    :is(#systems-view, .picker) .view-modes { grid-column: 1 / -1; grid-row: 1; justify-self: center; justify-content: center; width: 0; min-width: 100%; }
+    :is(#systems-view, .picker) :is(.atlas-disc, .atlas-levels, .dial-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
+    :is(#systems-view, .picker) .view-caption { grid-row: 3; }
+    :is(#systems-view, .picker) :is(.wheel-box, .ostwald-box, .munsell-box) :is([data-option="slicing"], [data-option="wheel-slicing"]) { margin-right: calc(1.75em + 1px); } /* room for PCCS's third (the tones) in every system, so that the centred row doesn't move */
+    @media (min-width: 601px) { #systems-view :is(.atlas, .wheel-views) { --h: min(calc(100vh - 14.5rem), calc((100vw - 7rem) / 1.72)); } }
     .view-option { display: flex; align-items: center; gap: 0.45em; color: var(--muted); white-space: nowrap; }
     .view-option[hidden] { display: none; }
     .view-option > span { display: none; } /* no room beside the control: the choices' tooltips say what they are */
@@ -636,7 +666,7 @@
     }
 
     /* Create, picking from OKLCH or Ostwald (the switch at the picker's top, instead of the grid): their views
-       as on the Colors page, in the picker's column, laid out as on phones (the wheel or disc as big as the
+       as on the Colour systems page, in the picker's column, laid out as on phones (the wheel or disc as big as the
        column allows, its control beside it, the switches above them), without the info panel: the line
        above them shows the colour under the pointer. The colours picked are marked on them, numbered. */
     .picker-source { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.8rem; }
@@ -648,7 +678,7 @@
     #create-view:not([data-show="pccs"]) .picker > .pccs-box { display: none; }
     .picker { container-type: inline-size; }
     .picker .wheel-panel { display: none; }
-    /* The view's size (--h, as on the Colors page) from the picker's width: computed there, as a length
+    /* The view's size (--h, as on the Colour systems page) from the picker's width: computed there, as a length
        (registered), so that it's the same inside the dial's box, which measures its own width. */
     @property --picker-h { syntax: "<length>"; inherits: false; initial-value: 0px; }
     .picker :is(.wheel-views, .atlas) { --h: var(--picker-h); grid-template-columns: auto auto; justify-content: center; column-gap: 1rem; }
@@ -694,25 +724,26 @@
     .error { color: var(--muted); }
 
     /* The reading pages (Guidance, Theory, About): one column of text, centred, as wide as reads well.
-       Their sections can be linked (#guidance/pairs): see showView. */
+       Their sections can be linked (#guidance/complementary): see showView. */
     /* The text in Source Serif, the headings and contents in DM Mono, as the rest of the site. 1rem of it
        has about the x-height of 0.9375rem of DM Mono; the column is as wide as 68ch of that DM Mono. */
     .prose { max-width: 38.25rem; margin: 0 auto; padding-bottom: 3rem; font-family: var(--serif); font-size: 1rem; line-height: 1.65; }
     /* Captions: at most three quarters of a paragraph's width (longer ones wrap), centred, lines filled to
        that width but no word left alone on the last one (pretty, not balance, which would narrow them). */
     .prose figcaption { width: fit-content; max-width: calc(38.25rem * 3 / 4); margin-inline: auto; text-wrap: pretty; }
-    .prose :is(h1, h2, h3, nav) { font-family: var(--mono); }
+    .prose :is(h1, h2, h3, h4, nav) { font-family: var(--mono); }
     .prose h1 { margin-top: 0.5rem; font-size: 1.5rem; font-weight: 500; line-height: 1.3; }
     /* About: Wada's self-portrait, beside the opening paragraphs on wide screens, centred above them on phones. */
     .prose .portrait { width: 11rem; margin: 1rem auto 1.25rem; }
     .prose .portrait img { display: block; width: 100%; height: auto; }
     .prose .portrait figcaption { margin-top: 0.5rem; color: var(--muted); font-size: 0.75rem; text-align: left; }
     @media (min-width: 40rem) { .prose .portrait { float: right; margin: 0.375rem 0 1rem 1.5rem; } .prose .opening { display: flow-root; } /* the portrait floats within the opening (a grid item, with the contents beside it) */ }
-    /* A section: a rule above it, and room. Its parts (h3), smaller, without. */
+    /* A section: a rule above it, and room. Its parts (h3), smaller, without, and theirs (h4) smaller still. */
     .prose h2 { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); font-size: 1.125rem; font-weight: 500; line-height: 1.4; }
     .prose h3 { margin-top: 2.25rem; font-size: 1rem; font-weight: 500; line-height: 1.4; }
+    .prose h4 { margin-top: 1.75rem; font-size: 0.9375rem; font-weight: 500; line-height: 1.4; }
     .prose :is(p, ul, ol, figure) { margin-top: 0.75rem; }
-    .prose :is(h2, h3) + :is(p, ul, ol) { margin-top: 0.5rem; }
+    .prose :is(h2, h3, h4) + :is(p, ul, ol) { margin-top: 0.5rem; }
     .prose :is(ul, ol) { padding-left: 1.5rem; }
     .prose li + li, .prose li > :is(ul, ol) { margin-top: 0.375rem; }
     .prose strong { font-weight: 600; }
@@ -976,11 +1007,10 @@
     .prose li > p:first-child { margin-top: 0; }
     .prose li > p + p { margin-top: 0.5rem; }
     .prose .examples li { margin: 0; }
-    .prose .examples .blocks[data-size="2"] { width: 7.5rem; }
-    .prose .examples .blocks[data-size="3"] { width: 9rem; }
-    .prose .examples .blocks[data-size="4"] { width: 6rem; }
+    .prose .examples .blocks[data-frame="line"][data-size="2"] { width: 7.5rem; }
+    .prose .examples .blocks[data-frame="line"]:not([data-size="2"]) { width: calc(3rem * var(--ar)); max-width: 100%; } /* squares as three's (a scale of seven) */
+    .prose .examples .blocks.cross { width: 6rem; }
     .prose .examples .blocks.stack { width: 4.5rem; }
-    .prose .thumb .blocks.card { aspect-ratio: 9 / 16; } /* a seasonal card, its bands as printed (see fillReading): tall enough for the small ones to show */
     .prose .examples p { align-self: start; max-width: 10.5rem; margin: 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.45; text-align: left; text-wrap: pretty; } /* as figure captions: the block centred, the text left */
   </style>
 </head>
@@ -992,7 +1022,8 @@
         <div><strong>Wada Sanzō</strong> <span>| A Dictionary of Color Combinations</span></div>
       </a>
       <div class="views">
-        <a href="#colors">Colors</a>
+        <a href="#colors">Wada colours</a>
+        <a href="#systems">Colour systems</a>
         <a href="#combinations">Combinations</a>
         <a href="#seasons">Seasons</a>
         <a href="#create">Create</a>
@@ -1002,7 +1033,7 @@
     <div class="subnav" data-view="colors" role="group" aria-label="Colours layout">
       <button type="button" data-value="grid">Grid</button>
       <button type="button" data-value="rows">Rows</button>
-      <button type="button" data-value="systems">Colour systems</button>
+      <button type="button" data-value="cards">Cards</button>
     </div>
     <div class="subnav" data-view="combinations" data-default="all" role="group" aria-label="Number of colours">
       <button type="button" data-value="2">2</button>
@@ -1041,7 +1072,7 @@
       // again on every change of address; it returns the view to show.
       function showHeader() {
         const route = location.hash.slice(1).split("/")[0];
-        const name = ["colors", "combinations", "combination", "seasons", "season", "create", "guidance", "theory", "about"].includes(route) ? route : "colors";
+        const name = ["colors", "systems", "combinations", "combination", "seasons", "season", "create", "guidance", "theory", "about"].includes(route) ? route : "colors";
         const section = { combination: "combinations", season: "seasons", guidance: "about", theory: "about" }[name] ?? name; // highlighted in the nav
         for (const a of document.querySelectorAll(".views a, .reading-subnav a")) { // (and the reading page, under About)
           if (a.hash === `#${a.closest(".views") ? section : name}`) a.setAttribute("aria-current", "page");
@@ -1057,7 +1088,6 @@
         const buttons = [...subnav.querySelectorAll("button")];
         let saved = null;
         try { saved = localStorage.getItem(`${subnav.dataset.view}-show`); } catch {}
-        if (subnav.dataset.view === "colors" && ["wheel", "oklch", "ostwald", "munsell", "pccs"].includes(saved)) saved = "systems"; // a system, once a layout of its own
         const value = buttons.some((b) => b.dataset.value === saved) ? saved : subnav.dataset.default ?? buttons[0].dataset.value;
         for (const b of buttons) b.setAttribute("aria-pressed", b.dataset.value === value);
       }
@@ -1066,12 +1096,14 @@
 
   <main>
     <section id="colors-view"></section>
+    <section id="systems-view" hidden></section>
     <section id="combinations-view" hidden></section>
     <section id="combination-view" hidden></section>
     <section id="seasons-view" hidden></section>
     <section id="season-view" hidden></section>
     <section id="create-view" hidden>
       <div class="create-main">
+        <div class="combo-switches"></div>
         <div class="create-stage"></div>
         <div class="create-related"></div>
       </div>
@@ -1092,7 +1124,6 @@
           <li><a href="#guidance/together">What makes colours go together</a>
             <ul>
               <li><a href="#guidance/harmony">Kinds of harmony</a></li>
-              <li><a href="#guidance/pairs">Opposite hues</a></li>
             </ul>
           </li>
           <li><a href="#guidance/using">Using a combination</a></li>
@@ -1185,30 +1216,53 @@
         </ul>
 
         <h3 id="guidance-harmony">Kinds of harmony</h3>
-        <p>Wada sorts harmony into four kinds.</p>
-        <ol>
-          <li><p><strong>Like colours.</strong> One hue in its light and dark tones, such as orange with its browns and its pale, flesh-like tints. Gentle, and hard to get badly wrong, but seldom more than ordinary. The place for a beginner to start. Widely liked as mild and pleasant (Hama).</p>
-            <ul class="examples">
-              <li><a data-combination="120"></a> <p>One red, strong and pale, Pompeian Red and Cameo Pink.</p></li>
-            </ul></li>
-          <li><p><strong>Different hues.</strong> Colours of quite different hues, light or dark alike. More interesting, but where the hues touch, weigh each colour's lightness and strength, or the result turns coarse.</p>
-            <ul class="examples">
-              <li><a data-combination="172"></a> <p>A blue, a purple and an orange, each at its own lightness, Antwerp Blue, Red Violet and the lighter Cinnamon Rufous.</p></li>
-            </ul></li>
-          <li><p><strong>Complementary.</strong> Opposite hues, whatever their lightness. Really a special case of different hues, but stronger than the others, so when to use them is debated. Each sets the other off (see <a href="#theory/complements">Complementary colours</a>), and used well they give lively, excellent combinations.</p>
-            <ul class="examples">
-              <li><a data-combination="22"></a> <p>Deep Lyons Blue and Yellow, one of the pairs in his own table (below).</p></li>
-            </ul></li>
-          <li><p><strong>Graded bands</strong> (<i>ungen</i>, <span lang="ja">暈繝</span>). One hue in steps, from white through the full colour to black, as in the banded colouring of temple ornament, and a combination takes part of that scale. Calmer still than the others. The steps can also move gradually through neighbouring hues (Hama).</p>
-            <ul class="examples">
-              <li><a data-combination="165"></a> <p>One red in three steps, from the dark Vistoris Lake through Spinel Red to the pale Cameo Pink.</p></li>
-            </ul></li>
-        </ol>
-        <p>His 1934 booklet sorts them differently, into colours of one family, changing gradually, and colours wholly unlike, each light, dark, pale, deep or free, ten kinds in all. For clothes, interiors and furniture, one family, freely mixing light and dark, pale and deep, is the safe choice, and colours wholly unlike are the hardest but the most rewarding.</p>
-        <p>The kinds are a standard, not rules to obey, and those with long experience of colour can merge them or break them. None of the book's combinations says which kind it is.</p>
+        <p>In his 1935 supplement, Wada sorts harmony into four kinds.</p>
 
-        <h3 id="guidance-pairs">Opposite hues</h3>
-        <p>Wada drew up a table of complementary pairs from his own palette. He paired them by hue alone, so their lightness and saturation vary. A colour's lighter and darker tones pair too. <button class="color-ref">Hermosa Pink</button> and <button class="color-ref">Pale Burnt Lake</button> go with <button class="color-ref">Sea Green</button>, as <button class="color-ref">Spectrum Red</button> does.</p>
+        <h4 id="guidance-like">Like colours</h4>
+        <p>One hue in its light and dark tones, such as orange with its browns and its pale, flesh-like tints. Hama adds neighbouring hues, such as orange with a yellower or a redder orange, or blue with a purplish blue, sometimes with one of them made stronger or weaker.</p>
+        <p>It's the most common kind, and gentle, because the steps from tone to tone have no sudden jumps. Whoever handles it, there is no fear of a great failure, and it's widely liked as mild and pleasant (Hama). But it seldom gives more than ordinary harmony.</p>
+        <p>So it's the place for a beginner to start, rather than going straight for different hues and failing. To lift it above the ordinary, let its colours differ in strength, so that they set one another off (see <a href="#guidance/together">What makes colours go together</a>).</p>
+        <ul class="examples">
+          <li><a data-combination="120"></a> <p>One red, strong and pale, Pompeian Red and Cameo Pink.</p></li>
+          <li><a data-combination="111"></a> <p>Neighbouring hues, Pale Lemon Yellow and a stronger Yellow Green.</p></li>
+        </ul>
+
+        <h4 id="guidance-bands">Graded bands</h4>
+        <p>One hue in steps, called <i>ungen</i> (<span lang="ja">暈繝</span>), as in the banded colouring of temple ornament. Wada describes it with blue. Put the full blue in the middle, then step lighter and lighter to one side, ending in white, and darker and darker to the other, ending in black.</p>
+        <ul class="examples">
+          <li><div data-colors="White|Salvia Blue|Olympic Blue|Blue|Deep Lyons Blue|Deep Indigo|Black"></div> <p>His blue scale, in the book's own blues, from White through Salvia Blue, Olympic Blue, the full Blue, Deep Lyons Blue and Deep Indigo to Black.</p></li>
+        </ul>
+        <p>A combination takes part of that scale, and it's calmer still than like colours. The steps can also move gradually round the hue circle, from one colour into its neighbours (Hama).</p>
+        <p>Choose colours at even steps along the scale, every second or every third (Hama).</p>
+        <p><a href="#systems" data-layout="ostwald" data-page="13">Ostwald's blue page</a> shows such scales, with Wada's colours marked. From the full blue at its right tip, the tints run up to white and the shades down to black, and the greyed blues fill the space between.</p>
+        <ul class="examples">
+          <li><a data-combination="165"></a> <p>One red in three steps, from the dark Vistoris Lake through Spinel Red to the pale Cameo Pink.</p></li>
+        </ul>
+
+        <h4 id="guidance-different">Different hues</h4>
+        <p>Colours of quite different hues, light or dark alike, such as a red with an orange, a yellow, a green, a blue or a purple. The freest kind, and more interesting than like colours, but harder to get right.</p>
+        <p>Where the hues touch they oppose each other, so weigh each colour's lightness and strength, or the result turns coarse.</p>
+        <ul class="examples">
+          <li><a data-combination="172"></a> <p>A blue, a purple and an orange, each at its own lightness, Antwerp Blue, Red Violet and the lighter Cinnamon Rufous.</p></li>
+        </ul>
+        <ul>
+          <li><p><strong>Balance lightness and saturation.</strong> Choosing the hues well isn't enough. Among vivid colours put a muted one, and among pale ones a deep one (see <a href="#guidance/together">What makes colours go together</a>).</p></li>
+          <li><p><strong>Two primaries</strong> (Chevreul). Two of red, yellow and blue go together better than one of them with a colour mixed from it, such as red with orange or purple. Such a pair works best when the primary is the brighter.</p></li>
+          <li><p><strong>Three or more colours</strong> (Hama). Choose hues that divide the hue circle about equally, such as red, yellow and blue, or red, green and blue, with one or two of them made lighter or darker.</p>
+            <ul class="examples">
+              <li><a data-combination="168"></a> <p>A blue, a yellow and a purplish red, about a third of the circle apart, the blue dark and the yellow light.</p></li>
+            </ul></li>
+          <li><p><strong>Where two clash,</strong> put white, grey or black between them (see <a href="#guidance/neutrals">White, grey or black between colours</a>).</p></li>
+        </ul>
+
+        <h4 id="guidance-complementary">Complementary</h4>
+        <p>Opposite hues, whatever their lightness. Really a special case of different hues, but stronger than the others, so when to use them is debated.</p>
+        <p>Each sets the other off (see <a href="#theory/complements">Complementary colours</a>), and Chevreul counts them good harmony by contrast. Used well they give lively, excellent combinations, though for fewer uses. They tire with long looking, though, so where a pair is too lively, change one colour's lightness and saturation (see <a href="#guidance/together">Variety and unity</a>).</p>
+        <ul class="examples">
+          <li><a data-combination="22"></a> <p>Deep Lyons Blue and Yellow, one of the pairs in his own table (below).</p></li>
+        </ul>
+        <p>Wada explains complements by after-images. Stare at a red paper, take it away, and green appears in its place. Yellow leaves ultramarine, and purple a green-yellow.</p>
+        <p>He drew up a table of complementary pairs from his own palette. He paired them by hue alone, so their lightness and saturation vary. A colour's lighter and darker tones pair too. <button class="color-ref">Hermosa Pink</button> and <button class="color-ref">Pale Burnt Lake</button> go with <button class="color-ref">Sea Green</button>, as <button class="color-ref">Spectrum Red</button> does.</p>
         <ul class="pairs">
           <li><button class="color-ref">Spectrum Red</button> <button class="color-ref">Sea Green</button></li>
           <li><button class="color-ref">Red Orange</button> <button class="color-ref">Green Blue</button></li>
@@ -1221,16 +1275,33 @@
           <li><button class="color-ref">Yellow Green</button> <button class="color-ref">Red Violet</button></li>
           <li><button class="color-ref">Night Green</button> <button class="color-ref">Rosolane Purple</button></li>
         </ul>
-        <p>Only one of these pairs is a combination in the book, about as many as chance would give.</p>
-        <ul class="examples">
-          <li><a data-combination="22"></a> <p>Deep Lyons Blue and Yellow.</p></li>
-        </ul>
         <p>In tests that averaged many people's judgements, cited by Hama, complementary pairs, or pairs a little off them, were good, and a colour with the hue halfway to its complement was poor.</p>
         <ul>
           <li><strong>Good.</strong> Red and blue, red and blue-green, orange and green-blue (or blue), yellow and violet, yellow and blue, yellow-green and violet, green and red-purple. Wada had his doubts about red with blue (see <a href="#guidance/outlook">Taste changes</a>).</li>
           <li><strong>Poor.</strong> Red and orange, red and yellow, orange and yellow, yellow and green (or blue-green), yellow-green and orange (or green-blue), green and blue.</li>
         </ul>
         <p class="remark"><strong>Since then:</strong> recent tests disagree. Pairs of very different hue are usually judged neither harmonious nor pleasing, and pairs of similar hue more of both. But people liked a small colour on a ground better the more its hue differed from the ground's, so contrasting hues suit a figure set on a background.</p>
+
+        <h4 id="guidance-1934">Ten kinds, in 1934</h4>
+        <p>His earlier booklet, of 1934, sorts harmony another way, into ten kinds, two kinds in five tones each.</p>
+        <ul>
+          <li><strong>One family.</strong> Colours of one family, changing gradually, which he likens to modulation in music. A family means neighbouring colours, not one colour. His example is a kimono outfit, a sky-blue haori, a kimono with a touch of ultramarine, an obi greener than sky blue and a yellowish-green collar.</li>
+          <li><strong>Wholly unlike.</strong> Colours of entirely different quality. The hardest kind, but the most rewarding.</li>
+        </ul>
+        <p>The five tones are these.</p>
+        <ul>
+          <li><strong>Light.</strong> Bright colours, equally strong.</li>
+          <li><strong>Dark.</strong> Dark colours, yet somewhat alike in tone.</li>
+          <li><strong>Pale.</strong> Neighbouring colours, alike in tone, their strength weakened.</li>
+          <li><strong>Deep.</strong> Rich, deep colours fused together, strongly stimulating.</li>
+          <li><strong>Free</strong> (<i>pan</i>, from the Greek). Tones passing freely into one another, mixing light and dark, pale and deep at will.</li>
+        </ul>
+        <p>For clothes, interiors and furniture, the safe choice is one family in free tones, which anyone can manage.</p>
+        <ul class="examples">
+          <li><a data-combination="210"></a> <p>One family in free tones, a strong Lemon Yellow, a pale Cinnamon Buff and a dark Lincoln Green.</p></li>
+          <li><a data-combination="141"></a> <p>Wholly unlike, Orange, Dark Tyrian Blue and Yellow Green.</p></li>
+        </ul>
+        <p>He meant the kinds as a standard, not rules to obey. Those with long experience of colour can merge them or break them.</p>
 
         <h2 id="guidance-using">Using a combination</h2>
         <ul>
@@ -1252,16 +1323,11 @@
         <h2 id="guidance-making">Making your own</h2>
         <p>Wada also meant his readers to make combinations of their own. His seasonal cards were movable, opening like a fan, so that anyone could try combinations besides his. On this site, <a href="#create">Create</a> lays out your own as in the book.</p>
         <ul>
-          <li><p><strong>Start from one hue,</strong> in its light and dark tones (like colours, above). It can hardly go wrong.</p>
+          <li><p><strong>Start from one hue,</strong> in its light and dark tones (see <a href="#guidance/like">Like colours</a> and <a href="#guidance/bands">Graded bands</a>). It can hardly go wrong.</p>
             <ul class="examples">
               <li><a data-combination="139"></a> <p>One blue, the dark Deep Indigo and the light Salvia Blue, with Neutral Gray.</p></li>
             </ul></li>
-          <li><p><strong>Then try different hues,</strong> with care. Where they touch, weigh each colour's lightness and strength, or the result turns coarse.</p></li>
-          <li><p><strong>Three or more colours</strong> (Hama). Choose hues that divide the hue circle about equally, such as red, yellow and blue, or red, green and blue, with one or two of them made lighter or darker.</p>
-            <ul class="examples">
-              <li><a data-combination="168"></a> <p>A blue, a yellow and a purplish red, about a third of the circle apart, the blue dark and the yellow light.</p></li>
-            </ul></li>
-          <li><p><strong>Even steps</strong> (Hama). Within one hue's series of tints, shades or greyed colours, colours at even steps, every second or every third, go well together. The <a href="#colors" data-layout="ostwald">Ostwald</a> view shows such series.</p></li>
+          <li><p><strong>Then try different hues,</strong> with care (see <a href="#guidance/different">Different hues</a> and <a href="#guidance/complementary">Complementary</a>).</p></li>
         </ul>
 
         <h3 id="guidance-neutrals">White, grey or black between colours</h3>
@@ -1336,7 +1402,7 @@
         <h1>Colour theory</h1>
         <p class="lead">Before combining colours, it helps to know what a colour is made of. This page is a short introduction to colour theory: what colour is, how to describe it, how colours mix and act on one another, and how they are ordered and named.</p>
         <p class="lead">The aim is to help you understand Wada Sanzō's work: the basics of colour as he understood them, from the booklets that went with his combinations (1934 and 1935), and the system and names he wrote his colours in. <a href="#about/hama">Hama Yaohiko</a>, who made a colour atlas with him in 1935, covered the same ground in more detail in its commentary, and fills in much of what follows. Where he saw something differently, the text says so. Colour science has moved on since the 1930s, so where it now says otherwise, a note explains what changed. The site also adds three other colour systems to Ostwald's.</p>
-        <p class="lead">You don't need any of it to use the combinations, but it explains the words <a href="#guidance">Guidance</a> uses and how the <a href="#colors">Colors</a> views order the palette.</p>
+        <p class="lead">You don't need any of it to use the combinations, but it explains the words <a href="#guidance">Guidance</a> uses and how <a href="#colors">Wada colours</a> and <a href="#systems">Colour systems</a> order the palette.</p>
         <nav aria-label="On this page"><ul class="contents">
           <li><a href="#theory">Introduction</a></li>
           <li><a href="#theory/light">Light and colour</a></li>
@@ -1416,7 +1482,7 @@
           <figure><div role="img" aria-label="Six hues, from yellow round to green, all light and clear, about as light as the row above"><span style="--c: oklch(0.9233 0.1224 103.46)"></span><span style="--c: oklch(0.7767 0.0915 38.09)"></span><span style="--c: oklch(0.7649 0.0717 335.79)"></span><span style="--c: oklch(0.7545 0.0528 277.75)"></span><span style="--c: oklch(0.7600 0.0778 208.59)"></span><span style="--c: oklch(0.7588 0.0812 155.19)"></span></div><figcaption>Light and clear</figcaption></figure>
           <figure><div role="img" aria-label="Six hues, from yellow round to green, all dark and greyed"><span style="--c: oklch(0.5237 0.0607 103.06)"></span><span style="--c: oklch(0.4505 0.0445 37.03)"></span><span style="--c: oklch(0.4520 0.0333 335.74)"></span><span style="--c: oklch(0.4482 0.0244 278.26)"></span><span style="--c: oklch(0.4464 0.0368 209.25)"></span><span style="--c: oklch(0.4452 0.0384 155.26)"></span></div><figcaption>Dark and greyed</figcaption></figure>
         </div>
-        <p>Mixing a colour with white gives its tints, with black its shades, and with grey its greyed tones, so one hue gives hundreds of colours. Ostwald, whose system Wada used, drew them as a triangle, with the full colour at one corner and white and black at the other two. Stood round an axis of greys, the triangles of all the hues make a three-dimensional shape, two cones joined at their bases. This colour solid has white at the top, black at the bottom and the full colours round its widest part, the middle (see the <a href="#colors" data-layout="ostwald">Ostwald view</a>).</p>
+        <p>Mixing a colour with white gives its tints, with black its shades, and with grey its greyed tones, so one hue gives hundreds of colours. Ostwald, whose system Wada used, drew them as a triangle, with the full colour at one corner and white and black at the other two. Stood round an axis of greys, the triangles of all the hues make a three-dimensional shape, two cones joined at their bases. This colour solid has white at the top, black at the bottom and the full colours round its widest part, the middle (see the <a href="#systems" data-layout="ostwald">Ostwald view</a>).</p>
         <figure class="hue-triangle"><svg viewBox="-0.9 -0.54 6.1 6.08" role="img" aria-label="One red as Ostwald drew it, a triangle with white at the top, black at the bottom and the full colour at the right corner, its tints along the upper edge, its shades along the lower one and its greyed tones inside"><path d="M-0.866 0L0.000 -0.5L0.866 0L0.000 0.5Z" fill="oklch(0.9623 0.0000 0.00)"/><path d="M0.000 0.5L0.866 0L1.732 0.5L0.866 1Z" fill="oklch(0.8344 0.0593 5.31)"/><path d="M-0.866 1L0.000 0.5L0.866 1L0.000 1.5Z" fill="oklch(0.7762 0.0000 0.00)"/><path d="M0.866 1L1.732 0.5L2.598 1L1.732 1.5Z" fill="oklch(0.7355 0.1130 5.57)"/><path d="M0.000 1.5L0.866 1L1.732 1.5L0.866 2Z" fill="oklch(0.6730 0.0478 5.31)"/><path d="M-0.866 2L0.000 1.5L0.866 2L0.000 2.5Z" fill="oklch(0.6261 0.0000 0.00)"/><path d="M1.732 1.5L2.598 1L3.464 1.5L2.598 2Z" fill="oklch(0.6679 0.1556 5.84)"/><path d="M0.866 2L1.732 1.5L2.598 2L1.732 2.5Z" fill="oklch(0.5933 0.0912 5.57)"/><path d="M0.000 2.5L0.866 2L1.732 2.5L0.866 3Z" fill="oklch(0.5429 0.0386 5.31)"/><path d="M-0.866 3L0.000 2.5L0.866 3L0.000 3.5Z" fill="oklch(0.5051 0.0000 0.00)"/><path d="M2.598 2L3.464 1.5L4.330 2L3.464 2.5Z" fill="oklch(0.6262 0.1856 6.08)"/><path d="M1.732 2.5L2.598 2L3.464 2.5L2.598 3Z" fill="oklch(0.5388 0.1256 5.84)"/><path d="M0.866 3L1.732 2.5L2.598 3L1.732 3.5Z" fill="oklch(0.4786 0.0735 5.57)"/><path d="M0.000 3.5L0.866 3L1.732 3.5L0.866 4Z" fill="oklch(0.4380 0.0311 5.31)"/><path d="M-0.866 4L0.000 3.5L0.866 4L0.000 4.5Z" fill="oklch(0.4074 0.0000 0.00)"/><path d="M3.464 2.5L4.330 2L5.196 2.5L4.330 3Z" fill="oklch(0.6019 0.2044 6.25)"/><path d="M2.598 3L3.464 2.5L4.330 3L3.464 3.5Z" fill="oklch(0.5052 0.1497 6.08)"/><path d="M1.732 3.5L2.598 3L3.464 3.5L2.598 4Z" fill="oklch(0.4346 0.1013 5.84)"/><path d="M0.866 4L1.732 3.5L2.598 4L1.732 4.5Z" fill="oklch(0.3861 0.0593 5.57)"/><path d="M0.000 4.5L0.866 4L1.732 4.5L0.866 5Z" fill="oklch(0.3533 0.0251 5.31)"/><path d="M-0.866 5L0.000 4.5L0.866 5L0.000 5.5Z" fill="oklch(0.3287 0.0000 0.00)"/></svg></figure>
         <p>Full colours aren't equally light, though. Matched against greys, yellow is the lightest, then orange-yellow and yellow-green, then orange and green, red and blue-green, blue and red-purple, and purple is the darkest.</p>
         <figure class="full-lightness"><div role="img" aria-label="Twelve full colours from the lightest to the darkest, yellow first and blue-purple last, each over a grey as light as itself"><span style="--c: oklch(0.8987 0.1855 105.11)"></span><span style="--c: oklch(0.8070 0.1520 82.59)"></span><span style="--c: oklch(0.7591 0.1585 123.99)"></span><span style="--c: oklch(0.6825 0.1536 45.28)"></span><span style="--c: oklch(0.6080 0.1581 154.62)"></span><span style="--c: oklch(0.6067 0.1542 204.43)"></span><span style="--c: oklch(0.6019 0.2044 6.25)"></span><span style="--c: oklch(0.5914 0.1481 184.48)"></span><span style="--c: oklch(0.5855 0.1691 230.41)"></span><span style="--c: oklch(0.5288 0.1505 336.27)"></span><span style="--c: oklch(0.4851 0.1160 306.36)"></span><span style="--c: oklch(0.4721 0.1150 271.07)"></span><span style="--c: oklch(0.8987 0 0)"></span><span style="--c: oklch(0.8070 0 0)"></span><span style="--c: oklch(0.7591 0 0)"></span><span style="--c: oklch(0.6825 0 0)"></span><span style="--c: oklch(0.6080 0 0)"></span><span style="--c: oklch(0.6067 0 0)"></span><span style="--c: oklch(0.6019 0 0)"></span><span style="--c: oklch(0.5914 0 0)"></span><span style="--c: oklch(0.5855 0 0)"></span><span style="--c: oklch(0.5288 0 0)"></span><span style="--c: oklch(0.4851 0 0)"></span><span style="--c: oklch(0.4721 0 0)"></span></div></figure>
@@ -1458,7 +1524,7 @@
         </figure>
         <p class="screen-note">* The discs blur as they spin, as the eye blurs a real one. A screen shows the spin frame by frame, so on its own it blends the colours only partly.</p>
         <p>Many painting books pair colours differently, from a circle built on red, yellow and blue paint. Each of the three is paired with the mix of the other two, so red with green, yellow with purple and blue with orange. Those pairs come from mixing paint, and paint doesn't mix like light. Yellow and blue paint make green (see <a href="#theory/mixing">Mixing colours</a>), while yellow and blue light make white. The pairs here are those of light.</p>
-        <p>A complement is a matter of hue alone, so a colour's lighter and darker tones share it. Pink and maroon have the same complement as red. Wada drew up a table of such pairs from his own palette (see <a href="#guidance/pairs">his pairs</a>).</p>
+        <p>A complement is a matter of hue alone, so a colour's lighter and darker tones share it. Pink and maroon have the same complement as red. Wada drew up a table of such pairs from his own palette (see <a href="#guidance/complementary">his pairs</a>).</p>
 
         <h2 id="theory-mixing">Mixing colours</h2>
         <p>Colours can be mixed in three ways, and each gives different results.</p>
@@ -1526,13 +1592,13 @@
         </ul>
 
         <h2 id="theory-systems">Colour systems</h2>
-        <p>A colour system orders colours by their attributes, so that any colour can be found and written down. This site places Wada's colours in four, each a view under <a href="#colors">Colors</a>.</p>
+        <p>A colour system orders colours by their attributes, so that any colour can be found and written down. This site places Wada's colours in four, each a view under <a href="#systems">Colour systems</a>.</p>
         <ul>
-          <li><p><strong><a href="#colors" data-layout="ostwald">Ostwald</a>.</strong> Every colour is a mix of full colour, white and black, so each hue is a triangle running from its full colour to white and to black, on a circle of 100 hues. Wada held Ostwald's theory to be "far above all others" and wrote colours in it, with 16 greys from white to black, lettered A to P, which this view follows. Hama drew the triangle with amounts of white and black of his own.</p>
+          <li><p><strong><a href="#systems" data-layout="ostwald">Ostwald</a>.</strong> Every colour is a mix of full colour, white and black, so each hue is a triangle running from its full colour to white and to black, on a circle of 100 hues. Wada held Ostwald's theory to be "far above all others" and wrote colours in it, with 16 greys from white to black, lettered A to P, which this view follows. Hama drew the triangle with amounts of white and black of his own.</p>
             <p class="remark"><strong>Since then:</strong> Ostwald's system has fallen out of use, and Munsell's has become the standard. The Swedish NCS still describes colours much as Ostwald did, by how much white, black and full colour they seem to hold.</p></li>
-          <li><strong><a href="#colors" data-layout="oklch">OKLCH</a>.</strong> A modern colour space, of lightness, chroma and hue, made so that equal steps look roughly equal. The site computes every colour in it from the book's CMYK, and uses it to show them on screen.</li>
-          <li><strong><a href="#colors" data-layout="munsell">Munsell</a>.</strong> Hue, value (lightness) and chroma, spaced to look even, with chroma reaching as far as colours go. Japan's colour standards write colours in it.</li>
-          <li><strong><a href="#colors" data-layout="pccs">PCCS</a>.</strong> Made by the Japan Color Research Institute, which grew out of the association Wada founded. Its lightness follows Munsell's value, and it adds tones (colours of like lightness and saturation across the hues), for colour harmony.</li>
+          <li><strong><a href="#systems" data-layout="oklch">OKLCH</a>.</strong> A modern colour space, of lightness, chroma and hue, made so that equal steps look roughly equal. The site computes every colour in it from the book's CMYK, and uses it to show them on screen.</li>
+          <li><strong><a href="#systems" data-layout="munsell">Munsell</a>.</strong> Hue, value (lightness) and chroma, spaced to look even, with chroma reaching as far as colours go. Japan's colour standards write colours in it.</li>
+          <li><strong><a href="#systems" data-layout="pccs">PCCS</a>.</strong> Made by the Japan Color Research Institute, which grew out of the association Wada founded. Its lightness follows Munsell's value, and it adds tones (colours of like lightness and saturation across the hues), for colour harmony.</li>
         </ul>
 
         <h2 id="theory-names">Colour names</h2>
@@ -1594,9 +1660,10 @@
           <li><strong>PCCS.</strong> Its lightness follows Munsell's value, and it groups colours into tones, of similar lightness and saturation across the hues, for colour harmony. Made by the institute that grew out of Wada's association.</li>
           <li><strong>OKLCH.</strong> A modern colour space of lightness, chroma and hue, made so that equal steps look about equally different.</li>
         </ul>
-        <p>The site has five main topics:</p>
+        <p>The site has six main topics:</p>
         <ul>
-          <li><strong><a href="#colors">Colors</a>.</strong> Wada's palette, grouped by colour family as in the book, and placed in four colour systems (see <a href="#theory/systems">Colour theory</a>).</li>
+          <li><strong><a href="#colors">Wada colours</a>.</strong> Wada's palette, grouped by colour family as in the book, as a grid, as rows or as cards.</li>
+          <li><strong><a href="#systems">Colour systems</a>.</strong> Wada's colours placed in four colour systems (see <a href="#theory/systems">Colour theory</a>).</li>
           <li><strong><a href="#combinations">Combinations</a>.</strong> The 348 combinations of the first volume, laid out as in the book.</li>
           <li><strong><a href="#seasons">Seasons</a>.</strong> The 72 seasonal combinations of the second volume, month by month.</li>
           <li><strong><a href="#create">Create</a>.</strong> A small tool to create your own combinations, from Wada's colours or any colour of the four systems.</li>
@@ -1637,6 +1704,7 @@
   <script type="module">
     const views = { // (the header's script, showHeader, knows the same names)
       colors: document.getElementById("colors-view"),
+      systems: document.getElementById("systems-view"),
       combinations: document.getElementById("combinations-view"),
       combination: document.getElementById("combination-view"),
       seasons: document.getElementById("seasons-view"),
@@ -1665,13 +1733,25 @@
 
     // Routes: #colors, #combinations, #seasons, #combination/<number> and #season/<number> for one
     // combination (Volume 1's, numbered 1-348, or a seasonal one, 1-72), followed by /<tab> for its
-    // other pages (see TABS), and #create/<colours> for a combination being composed. The reading pages:
+    // other pages (see TABS), and #create/<colours>[/<layout's choices>] for a combination being composed. The reading pages:
     // #guidance, #theory and #about, each followed by /<section> for one of its sections (id <page>-<section>).
     let data = null; // set once the JSON has loaded
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     // Volume 1's three sections: size, name, and the book's name (2色の配色帖, "album of 2-colour combinations").
     const SECTIONS = [[2, "Two-colour combinations", "2色の配色帖"], [3, "Three-colour combinations", "3色の配色帖"], [4, "Four-colour combinations", "4色の配色帖"]];
     const MAX_PICKED = 7; // as many colours as the largest combination in the book
+    // The shapes a combination can be drawn in, each for the numbers of colours it fits (see layouts,
+    // fitLayout); a seasonal card's small band and its strip of colours, as shares of its height (measured
+    // on the scans); and the shapes' icons in Create's switches (see renderSwitches), each with its title.
+    const SHAPES = { line: () => true, cross: (n) => n === 4, "one-two": (n) => n === 3, "two-one": (n) => n === 3, ground: (n) => n > 1 };
+    const SMALL = 0.052, STRIP = 0.815;
+    const SHAPE_ICONS = {
+      line: ["In a line", '<path stroke="none" d="M-7.5-2.25h4.6v4.5h-4.6zM-2.3-2.25h4.6v4.5h-4.6zM2.9-2.25h4.6v4.5h-4.6z"/>'],
+      cross: ["A cross (4 colours)", '<path stroke="none" d="M-3.5-5.5h7v3.4h-7zM-7.5-1.7h7.3v3.4h-7.3zM0.2-1.7h7.3v3.4h-7.3zM-3.5 2.1h7v3.4h-7z"/>'],
+      "one-two": ["One, then two (3 colours)", '<path stroke="none" d="M-3.5-3.6h7v3.4h-7zM-7.5 0.2h7.3v3.4h-7.3zM0.2 0.2h7.3v3.4h-7.3z"/>'],
+      "two-one": ["Two, then one (3 colours)", '<path stroke="none" d="M-7.5-3.6h7.3v3.4h-7.3zM0.2-3.6h7.3v3.4h-7.3zM-3.5 0.2h7v3.4h-7z"/>'],
+      ground: ["On a ground: one colour the ground, the others small on it", '<rect x="-7" y="-4.5" width="14" height="9" fill="none"/><path stroke="none" d="M-4-1.25h2.5v2.5h-2.5zM-1.25-1.25h2.5v2.5h-2.5zM1.5-1.25h2.5v2.5h-2.5z"/>'],
+    };
     const BIG = 1.6, DOT_GAP = 2.3; // Ostwald layout, every cell a dot: see along() below
     let press = null; // what the press prints (print-gamut.json): the Print view's edge, and Ostwald's system; see gamut() below
     let printTable = null, printLoading = null; // the print profile's table, for CMYK estimates: see loadPrintTable() below
@@ -1683,7 +1763,10 @@
     // order (#create/1-46-89; a new colour by its token, see newColour), so it can be shared; also
     // remembered in this browser, as are the new colours picked (`news`, see remember; read when Create is first
     // opened: newsRead).
-    const create = { picked: [], active: null, note: "", dragged: false, previewing: false, news: [], newsRead: false, replaced: null };
+    // `layout`: the choices made with the switches above it ({ dir, shape, main }, any of them; main: a
+    // colour, so it follows it when the colours are swapped), each drawn while it fits (see fitLayout); in
+    // the address after the colours (#create/1-46-89/column/main-2: see createCode).
+    const create = { picked: [], layout: {}, active: null, note: "", dragged: false, previewing: false, news: [], newsRead: false, replaced: null };
     // Your combinations: those saved in Create, in this browser, by their colours as in the address
     // (1-46-89), in the order saved; shown first in Combinations (see renderYours). `undo`: the one last
     // removed there and where it was, until the next change; `section`: theirs in Combinations.
@@ -1703,7 +1786,7 @@
     // New colours made before those three files were in (or found missing): named again once they are.
     const unnamed = new Set();
     let named = false, naming = null;
-    // The Colors page's systems' views, each made the first time it's shown (see showLayout; being made:
+    // The Colour systems page's systems' views, each made the first time it's shown (see showLayout; being made:
     // see settle): each { box, adopt } (adopt: the shared choices shown, when it's shown again).
     const LAYOUTS = ["oklch", "ostwald", "munsell", "pccs"], layouts = new Map();
     // The system chosen, in the switch that leads the one shown's switches (remembered by the page).
@@ -1713,7 +1796,7 @@
     // What each system has: a range (Screen or Print), its slices, its views with choices (the tones are
     // PCCS's), and those with a space switch.
     const SYSTEM_DEFAULTS = { view: "2d", range: "screen", slicing: "level", cut: "top", space: "real", bg: "grid", strength: "full", wada: "grid" };
-    // The views' choices, per view where they differ (see viewPrefs); and the Colors page's until chosen.
+    // The views' choices, per view where they differ (see viewPrefs); and the Colour systems page's until chosen.
     const VIEW_VALUES = {
       space: ["real", "normalised"], strength: ["full", "faded"], wada: ["grid", "dots", "none"],
       bg: { flat: ["smooth", "grid", "griddot", "dots", "none"], "2d": ["smooth", "grid", "griddot", "dots", "none"], tones: ["grid", "griddot", "dots", "none"], "3d": ["walls", "solid", "grid", "griddot", "dots", "none"] },
@@ -1725,7 +1808,7 @@
       munsell: { range: true, slicing: ["level", "pages"], views: ["flat", "2d", "3d"], space: ["flat", "2d", "3d"] },
       pccs: { range: true, slicing: ["level", "pages", "tones"], views: ["flat", "2d", "tones", "3d"], space: ["flat", "2d", "3d"] },
     };
-    // Where the shared choices are saved: the Colors page's, or Create's picker's (apart, and without 3D).
+    // Where the shared choices are saved: the Colour systems page's, or Create's picker's (apart, and without 3D).
     const sharedPrefix = (picker) => (picker ? "create-systems-" : "systems-");
     // The shared choices as `layout` has them, before it's shown: each it hasn't, or whose choice it hasn't,
     // its default.
@@ -1756,7 +1839,7 @@
       const old = stored("colors-show") === "wheel" ? "oklch" : stored("colors-show");
       if (LAYOUTS.includes(old)) {
         store("colors-system", system = old);
-        store("colors-show", "systems");
+        store("colors-show", "grid"); // (the systems now a page of their own)
         if (stored("systems-view") === null) {
           const prefix = old === "oklch" ? "wheel-" : `${old}-`, v = old === "oklch" ? "" : `${old}-`;
           const own = { view: old === "oklch" ? "wheel-view" : `${old}-mode`, range: `${prefix}range`, slicing: `${prefix}slicing`, cut: `${prefix}cut` };
@@ -1797,7 +1880,7 @@
       });
       return option;
     }
-    const resetOption = resetSwitch(false, () => [views.colors.dataset.system, layouts.get(views.colors.dataset.system)]);
+    const resetOption = resetSwitch(false, () => [views.systems.dataset.system, layouts.get(views.systems.dataset.system)]);
     // The 3D view's camera, shared by the systems as they're changed: how far it's turned from the system's
     // own start (az0, its solid's), round (turn) and its height (el); none till one's been shown.
     let camera = null;
@@ -2123,12 +2206,12 @@
         renderCombination(name, Number(arg), tab);
         scrollTo(0, y ?? 0);
       } else if (name === "create" && data) {
-        openCreate(arg);
+        openCreate(location.hash.slice(1).split("/").slice(1).join("/")); // its colours, then its layout's choices
         document.title = "Create | Wada Sanzō";
         if (y != null) scrollTo(0, y);
         else if (!afterLoad) scrollTo(0, 0);
       } else if (READING[name]) {
-        // Back where the reader was, else at the section the address names (#guidance/pairs), else at the
+        // Back where the reader was, else at the section the address names (#guidance/complementary), else at the
         // top. Once the data is in (afterLoad), only to a section again (the cards above it have taken their
         // room), not to the top under a reader already scrolling.
         document.title = `${READING[name]} | Wada Sanzō`;
@@ -2149,7 +2232,7 @@
         markSection();
       } else {
         document.title = "Wada Sanzō | A Dictionary of Color Combinations";
-        if (name === "colors") showLayout();
+        if (name === "systems") showLayout();
         if (y != null) scrollTo(0, y);
         else if (!afterLoad) scrollTo(0, 0);
       }
@@ -2158,7 +2241,7 @@
       // New colours (in Create, and in your combinations) are named once the files that name them are in.
       if (unnamed.size && (name === "create" || name === "combinations")) nameColours();
     }
-    // Sub-navigation: each view's options (colors: grid, rows or the colour systems; combinations: number of
+    // Sub-navigation: each view's options (colors: grid, rows, cards or the colour systems; combinations: number of
     // colours; seasons: one month or all).
     // The choice is set on the view as data-show, which the CSS reads, and remembered in this browser;
     // at first, the one the header's script chose (the one remembered, or the default).
@@ -2171,10 +2254,31 @@
         store(key, value);
       };
       for (const b of buttons) b.addEventListener("click", () => {
+        const kept = topItem(view);
         choose(b.dataset.value);
-        if (view === views.colors) showLayout(); // a system's view, made when first shown
+        keepItem(kept);
       });
       choose(buttons.find((b) => b.getAttribute("aria-pressed") === "true").dataset.value);
+    }
+
+    // Changing a view's layout or what it shows (its sub-navigation) keeps the reader's place: the colour or
+    // combination at the top of the screen (the first mostly below the header) stays where it was on the screen;
+    // if it isn't shown any more, the page starts at its top, as it does if it was at its top. Switched
+    // again without scrolling, the same one (with several to a row, the first of a row would be another
+    // each time, and the page would drift).
+    let lastKept = null;
+    function topItem(view) {
+      if (scrollY < 1) return null;
+      if (lastKept && lastKept.at === scrollY && view.contains(lastKept.el) && lastKept.el.getClientRects().length) return lastKept;
+      const under = document.querySelector("header").getBoundingClientRect().bottom;
+      const el = [...view.querySelectorAll(":is(.grid, .combos) > li")].find((li) => { const r = li.getBoundingClientRect(); return r.height && r.top + r.height / 2 > under; }); // (mostly seen)
+      return el && { el, y: el.getBoundingClientRect().top };
+    }
+    function keepItem(kept) {
+      if (kept?.el.getClientRects().length) scrollBy({ top: kept.el.getBoundingClientRect().top - kept.y, behavior: "instant" });
+      else scrollTo({ top: 0, behavior: "instant" });
+      lastKept = kept && { ...kept, at: scrollY };
+      keepPlace();
     }
 
     addEventListener("hashchange", () => showView());
@@ -2217,7 +2321,7 @@
     // the page is still where it put itself, shorter than it will be. The page does this itself, not the
     // browser, which would while the view is hidden or not made yet.
     history.scrollRestoration = "manual";
-    // unsettled: the view shown that is still being made ({ hash: its address, view: "colors" or "create",
+    // unsettled: the view shown that is still being made ({ hash: its address, view: "systems" or "create",
     // layout: the system shown in it, at: where the page put itself, see showView }). Scrolled from there,
     // by anyone, its place is wherever it's been scrolled to. Meanwhile, and until the page is next
     // scrolled, the browser doesn't keep what's in sight in sight as the page grows (scroll anchoring), so
@@ -2228,8 +2332,8 @@
       unsettled = null;
       document.documentElement.style.overflowAnchor = ""; // (the browser keeps what's in sight in sight again)
     }
-    // The layout a view shows (on the Colors page, among the colour systems, the one chosen).
-    const layoutOf = (view) => (view === "colors" && views.colors.dataset.show === "systems" ? system : views[view].dataset.show);
+    // The layout a view shows (on the Colour systems page, the system chosen).
+    const layoutOf = (view) => (view === "systems" ? system : views[view].dataset.show);
     const waiting = (mark) => mark?.hash === location.hash && !views[mark.view].hidden && layoutOf(mark.view) === mark.layout;
     const holding = () => waiting(unsettled) && scrollY === unsettled.at; // (its place to be restored once it's made)
     function keepPlace() {
@@ -2450,7 +2554,7 @@
       });
 
       buildPicker(colors, families);
-      // (The Colors page's systems' views are made when first shown: see showLayout.)
+      // (The Colour systems page's systems' views are made when first shown: see showLayout.)
       // Prepare the wheel background's hue table while the page is idle, so opening the wheel is quick.
       gamut("screen").prepare();
       fillReading(colors, combos, seasons);
@@ -2578,33 +2682,33 @@
       if (print && loadErrors[PRESS]) store(rangeKey, "screen");
       return null;
     }
-    // Shows the Colors page's colour system chosen, if it's showing the colour systems: made the first time
+    // Shows the Colour systems page's system chosen, if it's shown: made the first time
     // (once its files are in), in its place after the others, the one shown till then staying till it is;
     // the shared choices as it has them (fitChoices), shown, and the system switch at the head of its own.
     function showLayout() {
-      if (!data || views.colors.hidden || views.colors.dataset.show !== "systems") return;
+      if (!data || views.systems.hidden) return;
       const layout = system;
       const show = () => {
         if (layout !== system) return; // (another chosen since)
-        const made = layouts.get(layout), was = layouts.get(views.colors.dataset.system);
+        const made = layouts.get(layout), was = layouts.get(views.systems.dataset.system);
         if (was && was !== made) camera = was.camera?.() ?? camera; // (the last system's, to turn this one's to)
         made.adopt?.();
         const focused = [systemOption, resetOption].find((o) => o.contains(document.activeElement)) && document.activeElement; // (moved, it would lose the keyboard's focus)
         const modes = made.box.querySelector(".view-modes") ?? made.box;
         modes.prepend(systemOption);
         modes.append(resetOption);
-        views.colors.dataset.system = layout;
+        views.systems.dataset.system = layout;
         if (focused) focused.focus({ preventScroll: true });
       };
       fitChoices(layout);
       if (layouts.has(layout)) show();
-      settle("colors", !layouts.has(layout) && (() => filesFor(layout, "").then((message) => {
+      settle("systems", !layouts.has(layout) && (() => filesFor(layout, "").then((message) => {
         const { colors } = data;
         const made = message ? { box: missingSystem(message) } : layout === "oklch" ? makeWheel(colors, { withViews: true }) : layout === "ostwald" ? makeOstwald(colors)
           : makeNotation(colors, layout === "munsell" ? munsellShared() : pccsShared());
         layouts.set(layout, made);
         const next = LAYOUTS.slice(LAYOUTS.indexOf(layout) + 1).map((other) => layouts.get(other)?.box).find(Boolean);
-        views.colors.insertBefore(made.box, next ?? null);
+        views.systems.insertBefore(made.box, next ?? null);
         show();
       })));
     }
@@ -2652,25 +2756,93 @@
       return `#${combo.kind}/${combo.number}`;
     }
 
-    // Blocks for n colours laid out as in the book: Volume 1's layouts for 2 to 4 (see the CSS),
-    // stacked for seasonal combinations and for more than 4.
-    function emptyBlocks(n, stacked) {
-      const blocks = document.createElement("div");
-      blocks.className = stacked ? "blocks stack" : "blocks";
-      if (stacked) blocks.style.setProperty("--n", n);
-      else blocks.dataset.size = n;
+    // How a combination's colours are drawn (a layout): their direction, a row or a column; their shape, in
+    // a line, a cross (4 colours), one then two or two then one (3), or on a ground (one colour as the
+    // ground, the others small on it); and the main colour, if any (its index): in a line, drawn large and
+    // the others as small bands, as the seasonal cards print theirs; on a ground, the ground. The book's
+    // own: Volume 1's 2 and 3 colours in a row, 4 as a cross; the seasonal cards in a column, the top one
+    // main. Create's (see create.layout) are Volume 1's for 2 to 4 colours and a column for 5 to 7, none
+    // main, but for the choices made there, each kept while it fits the number of colours.
+    function defaultLayout(n) {
+      return { dir: n > 4 ? "column" : "row", shape: n === 4 ? "cross" : "line", main: null };
+    }
+    function bookLayout(combo) {
+      return combo.kind === "season" ? { dir: "column", shape: "line", main: 0 } : defaultLayout(combo.colors.length);
+    }
+    // The layout for n colours with the choices made ({ dir, shape, main }, any of them): each kept if it
+    // fits, else the default's. A main colour only in a line or on a ground (there the first, if none).
+    function fitLayout(n, chosen = {}) {
+      const base = defaultLayout(n);
+      const shape = chosen.shape && SHAPES[chosen.shape](n) ? chosen.shape : base.shape;
+      const own = (shape === "line" || shape === "ground") && chosen.main != null && chosen.main >= 0 && chosen.main < n;
+      return { dir: chosen.dir ?? base.dir, shape, main: own ? chosen.main : shape === "ground" ? 0 : null };
+    }
+    // Where each colour goes: the grid's columns and rows (as fr), each colour's lines ([row, column, row
+    // end, column end]), and the whole's width over its height. Worked out for a row, and turned for a
+    // column; but a line of colours, none main, is a row of Volume 1's (two of 6:5, more as squares), or a
+    // column as a seasonal card's frame (3:4). A main colour in a line takes a seasonal card's large band,
+    // in a frame of 16:9 (9:16 in a column); a ground fills that frame, the others small squares in a
+    // line across its middle, at most 70% of it long (room at its ends for the ground's name).
+    function geometry(n, { dir, shape, main }) {
+      let cols, rows, at, ar;
+      if (shape === "line") {
+        const big = (STRIP - (n - 1) * SMALL) / SMALL;
+        cols = Array.from({ length: n }, (_, i) => (i === main ? big : 1));
+        rows = [1];
+        at = cols.map((_, i) => [1, i + 1, 2, i + 2]);
+        ar = main != null ? 16 / 9 : dir === "column" ? 4 / 3 : n === 2 ? 12 / 5 : n;
+      } else if (shape === "cross") {
+        [cols, rows, ar] = [[1, 1, 1, 1], [1, 1, 1], 4 / 3];
+        at = [[1, 2, 2, 4], [2, 1, 3, 3], [2, 3, 3, 5], [3, 2, 4, 4]];
+      } else if (shape === "one-two" || shape === "two-one") {
+        [cols, rows, ar] = [[1, 1, 1, 1], [1, 1], 2];
+        at = shape === "one-two" ? [[1, 2, 2, 4], [2, 1, 3, 3], [2, 3, 3, 5]] : [[1, 1, 2, 3], [1, 3, 2, 5], [2, 2, 3, 4]];
+      } else { // a ground, 16 by 9
+        const k = n - 1, s = Math.min(0.24 * 9, (0.7 * 16) / (1.5 * k - 0.5)), gap = s / 2, m = (16 - (k * s + (k - 1) * gap)) / 2;
+        cols = [m, ...Array.from({ length: k }, (_, j) => (j ? [gap, s] : [s])).flat(), m];
+        rows = [(9 - s) / 2, s, (9 - s) / 2];
+        ar = 16 / 9;
+        let j = 0;
+        at = Array.from({ length: n }, (_, i) => (i === main ? [1, 1, 4, cols.length + 1] : [2, 2 + 2 * j, 3, 3 + 2 * j++]));
+      }
+      if (dir === "column") {
+        [cols, rows] = [rows, cols];
+        at = at.map(([r0, c0, r1, c1]) => [c0, r0, c1, r1]);
+        ar = 1 / ar;
+      }
+      return { cols, rows, at, ar };
+    }
+    // Blocks for the items (one per colour, or an empty slot) laid out so.
+    function blocksOf(layout, items) {
+      const n = items.length, g = geometry(n, layout), blocks = document.createElement("div");
+      blocks.className = "blocks";
+      Object.assign(blocks.dataset, { size: n, dir: layout.dir, shape: layout.shape });
+      // Its frame, for its width where it's shown (see the CSS): a row in a line, as wide as there is room;
+      // else wide or tall.
+      blocks.dataset.frame = layout.shape === "line" && layout.dir === "row" && layout.main == null ? "line" : g.ar >= 1 ? "wide" : "tall";
+      if (layout.shape === "cross" && layout.dir === "row") blocks.classList.add("cross"); // Volume 1's
+      if (layout.shape === "line" && layout.dir === "column") blocks.classList.add("stack"); // its bands, a seasonal card's
+      if (layout.main != null) blocks.classList.add("main");
+      const track = (list) => list.map((f) => `minmax(0, ${+f.toFixed(4)}fr)`).join(" ");
+      blocks.style.gridTemplateColumns = track(g.cols);
+      blocks.style.gridTemplateRows = track(g.rows);
+      blocks.style.aspectRatio = +g.ar.toFixed(5);
+      blocks.style.setProperty("--ar", +g.ar.toFixed(5));
+      items.forEach((item, i) => {
+        item.style.gridArea = g.at[i].join(" / ");
+        if (layout.shape === "ground" && i === layout.main) item.classList.add("ground");
+        blocks.append(item);
+      });
       return blocks;
     }
 
-    // The combination's colours laid out as in the book; make(colour) creates each block.
-    function blocksFor(combo, make) {
-      const blocks = emptyBlocks(combo.colors.length, combo.kind === "season");
-      for (const c of combo.colors) {
+    // The combination's colours laid out as in the book (or as `layout` says); make(colour) creates each block.
+    function blocksFor(combo, make, layout = bookLayout(combo)) {
+      return blocksOf(layout, combo.colors.map((c) => {
         const block = make(c);
         block.style.setProperty("--color", c.css);
-        blocks.append(block);
-      }
-      return blocks;
+        return block;
+      }));
     }
 
     // A colour block that shows its name on hover and opens the colour dialog on click (or does onClick).
@@ -2724,7 +2896,7 @@
 
     // The reading pages, once the data is in: each colour named in their text (a .color-ref, by its name
     // in colors.json, or its data-color) gets its square and opens its dialog; each combination or seasonal
-    // card they show (data-combination, data-season) is drawn, a link to its page; a link to one of the Colors layouts (data-layout)
+    // card they show (data-combination, data-season) is drawn, a link to its page; a link to one of the colour systems (data-layout)
     // chooses it there.
     // A combination's thumbnail, in the link a: its number over its colours.
     function thumbOf(a, combo) {
@@ -2777,17 +2949,10 @@
           continue;
         }
         thumbOf(slot, combo).setAttribute("aria-label", `${season ? "Seasonal combination" : "Combination"} ${combo.number}`);
-        // A card as it's printed, since the text speaks of its large colour: the strip from about 0.06 to
-        // 0.875 of the card's height, each small band about 0.052 of it, the large colour on top taking the
-        // rest (measured on the scans: about 11 small bands' height with 5 colours, 10 with 6).
-        if (season) {
-          const n = combo.colors.length, blocks = slot.querySelector(".blocks");
-          blocks.classList.add("card");
-          blocks.style.gridTemplateRows = `${((0.815 - (n - 1) * 0.052) / 0.052).toFixed(2)}fr repeat(${n - 1}, 1fr)`;
-        }
       }
-      // A combination made for the page to show what not to do (data-colors, its colours' names): drawn as
-      // the book's are, but with no number and no link (its caption says what it is).
+      // A combination made for the page, to show what not to do or a scale (data-colors, its colours' names):
+      // drawn in a row, as the book's 2 and 3 colours are, but with no number and no link (its caption says
+      // what it is).
       for (const slot of document.querySelectorAll(".prose .examples [data-colors]")) {
         const colors = slot.dataset.colors.split("|").map((name) => byName.get(name));
         if (colors.includes(undefined)) {
@@ -2795,14 +2960,20 @@
           continue;
         }
         slot.className = "thumb made";
-        const blocks = blocksFor({ colors }, () => document.createElement("div"));
+        const blocks = blocksFor({ colors }, () => document.createElement("div"), { dir: "row", shape: "line", main: null });
         blocks.setAttribute("aria-hidden", "true");
         slot.append(blocks);
       }
       for (const link of document.querySelectorAll(".prose a[data-layout]")) {
+        // The system, shown as the link opens the page; with data-page, sliced through the axis in 2D at
+        // that page (the Ostwald view's).
         link.addEventListener("click", () => {
+          if (link.dataset.page) {
+            store("systems-view", "2d");
+            store("systems-slicing", "pages");
+            store(`${link.dataset.layout}-page`, link.dataset.page);
+          }
           chooseSystem(link.dataset.layout, false);
-          document.querySelector('.subnav[data-view="colors"] button[data-value="systems"]').click();
         });
       }
       spinDiscs();
@@ -2908,6 +3079,22 @@
     // its token, its OKLCH values (see oklchColour).
     function colorsCode(colors) {
       return colors.map(tokenOf).join("-");
+    }
+    // A composition in an address, and as saved: its colours, then the choices made for its layout, each
+    // as a part of its own (row or column; a shape; main-<its place among the colours, from 1>). Read
+    // back: the colours and the choices ({ dir, shape, main: the colour }), any part not known left out.
+    function createCode(colors, chosen = {}) {
+      const at = chosen.main ? colors.indexOf(chosen.main) : -1;
+      return [colorsCode(colors), chosen.dir, chosen.shape, at >= 0 && `main-${at + 1}`].filter(Boolean).join("/");
+    }
+    function parseCreate(text) {
+      const [first = "", ...parts] = text.split("/"), colors = parseColors(first), layout = {};
+      for (const part of parts) {
+        if (part === "row" || part === "column") layout.dir = part;
+        else if (part in SHAPES) layout.shape = part;
+        else if (/^main-\d$/.test(part) && colors[part.slice(5) - 1]) layout.main = colors[part.slice(5) - 1];
+      }
+      return { colors, layout };
     }
     function parseColors(text, most = MAX_PICKED) {
       const colors = [];
@@ -3036,7 +3223,7 @@
     }
     // Each as Create would write it (its colours' tokens as they're made now), of 2 colours or more, once.
     function yoursOf(codes) {
-      return [...new Set(codes.map((code) => parseColors(code)).filter((colors) => colors.length > 1).map(colorsCode))];
+      return [...new Set(codes.map(parseCreate).filter(({ colors }) => colors.length > 1).map(({ colors, layout }) => createCode(colors, layout)))];
     }
     function saveYours(list, undo = null) {
       yours.list = list;
@@ -3064,7 +3251,7 @@
       const list = document.createElement("ul");
       list.className = "combos";
       yours.list.forEach((code, i) => {
-        const colors = parseColors(code);
+        const { colors, layout } = parseCreate(code);
         if (colors.length < 2) return;
         const open = Object.assign(document.createElement("a"), { className: "combo-number", href: `#create/${code}`, textContent: i + 1, title: "Open in Create" });
         const remove = Object.assign(document.createElement("button"), { type: "button", className: "remove", title: "Remove" });
@@ -3077,12 +3264,11 @@
         const head = document.createElement("div");
         head.className = "combo-head";
         head.append(open, remove);
-        const blocks = emptyBlocks(colors.length, colors.length > 4); // as in Create
-        for (const c of colors) {
+        const blocks = blocksOf(fitLayout(colors.length, { ...layout, main: colors.indexOf(layout.main) }), colors.map((c) => { // as in Create
           const button = namedColorButton(c, c.token ? () => showNewDetail(c) : undefined);
           button.style.setProperty("--color", c.css);
-          blocks.append(button);
-        }
+          return button;
+        }));
         const li = document.createElement("li");
         li.dataset.size = colors.length; // for the sub-navigation's choice of size
         li.setAttribute("aria-label", `Your combination ${i + 1}`);
@@ -3121,8 +3307,8 @@
       if (arg) { // (#create/ with nothing after it: as #create)
         let text = arg;
         try { text = decodeURIComponent(arg); } catch {} // (a link may have its commas as %2C)
-        create.picked = parseColors(text);
-      } else if (!create.picked.length) create.picked = parseColors(stored("create") ?? "");
+        ({ colors: create.picked, layout: create.layout } = parseCreate(text));
+      } else if (!create.picked.length) ({ colors: create.picked, layout: create.layout } = parseCreate(stored("create") ?? ""));
       create.picked.forEach(remember);
       create.active = null;
       create.note = "";
@@ -3132,6 +3318,7 @@
 
     // After every change: the address, the saved copy, the composition and the picker's marks.
     function updateCreate(focusSlot) {
+      if (create.layout.main && !create.picked.includes(create.layout.main)) delete create.layout.main; // (its colour taken out)
       writeCreate();
       renderStage(focusSlot);
       renderRelated();
@@ -3150,7 +3337,7 @@
     // still being made, restored once it's there: see keepPlace and settle; unless the composition has
     // changed since, but for its colours' names, `renamed`.)
     function writeCreate(renamed = false) {
-      const code = colorsCode(create.picked), was = location.hash;
+      const code = createCode(create.picked, create.layout), was = location.hash;
       history.replaceState(history.state, "", code ? `#create/${code}` : "#create");
       if (renamed && unsettled?.hash === was) unsettled.hash = location.hash;
       store("create", code);
@@ -3221,10 +3408,11 @@
     // composition changes. The composition is shown from its top.
     function useCombination(combo) {
       create.replaced = {
-        previous: [...create.picked], code: colorsCode(combo.colors),
+        previous: [...create.picked], layout: create.layout, code: colorsCode(combo.colors),
         label: combo.kind === "season" ? `seasonal combination ${comboLabel(combo)}` : `combination ${comboLabel(combo)}`,
       };
       create.picked = [...combo.colors];
+      create.layout = combo.kind === "season" ? { dir: "column", main: combo.colors[0] } : {}; // drawn as in the book
       create.active = null;
       create.note = "";
       updateCreate();
@@ -3234,7 +3422,7 @@
       views.create.querySelector(".create-stage .undo")?.focus({ preventScroll: true });
     }
 
-    // The composition: the colours laid out as in the book (2 to 7; empty slots until there are 2),
+    // The composition: the colours laid out as its layout's choices say (see fitLayout; 2 to 7, empty slots until there are 2),
     // each colour's values, a message, and actions. With a preview ({ colors, at }), its colours
     // instead, colour `at` being the one not picked yet.
     function renderStage(focusSlot, preview) {
@@ -3242,19 +3430,19 @@
       const focus = focusIn(views.create.querySelector(".create-stage")); // (made again: kept on the same control)
       const shown = preview?.colors ?? picked;
       const size = Math.max(2, shown.length);
-      const blocks = emptyBlocks(size, size > 4);
-      for (let i = 0; i < size; i++) {
-        if (i < shown.length) blocks.append(slotButton(shown[i], i, !preview));
-        else blocks.append(Object.assign(document.createElement("div"), { className: "empty" }));
-      }
+      const layout = fitLayout(size, { ...create.layout, main: picked.indexOf(create.layout.main) }); // (a place: a preview keeps the others')
+      const blocks = blocksOf(layout, Array.from({ length: size }, (_, i) => (i < shown.length ? slotButton(shown[i], i, !preview) : Object.assign(document.createElement("div"), { className: "empty" }))));
       const figure = document.createElement("div");
       figure.className = "combo-figure";
-      figure.append(blocks);
+      figure.append(blocks, nameLine(blocks, preview && shown[preview.at]));
+      // The values under each colour in a row of 2 or 3 (a line, none main); else in rows under them all.
+      const under = blocks.dataset.frame === "line" && size <= 3;
       let info = null;
       if (shown.length) {
-        info = size > 3 ? infoFor(shown, true) : infoFor(shown, false, size);
+        info = under ? infoFor(shown, false, size) : infoFor(shown, true);
         if (preview) info.children[preview.at].classList.add("preview");
       }
+      if (!preview) renderSwitches(layout);
 
       const note = document.createElement("p");
       note.className = "section-label";
@@ -3264,6 +3452,7 @@
         const undo = Object.assign(document.createElement("button"), { type: "button", className: "undo", textContent: "Undo" });
         undo.addEventListener("click", () => {
           create.picked = replaced.previous;
+          create.layout = replaced.layout;
           create.replaced = null;
           create.active = null;
           create.picked.forEach(remember);
@@ -3299,7 +3488,7 @@
       actions.className = "actions";
       if (picked.length) {
         // Save: into your combinations (in Combinations), from 2 colours; again, out of them.
-        const code = colorsCode(picked), saved = yours.list.includes(code);
+        const code = createCode(picked, create.layout), saved = yours.list.includes(code);
         const save = Object.assign(document.createElement("button"), { type: "button", className: "save", textContent: saved ? "Saved" : "Save", disabled: picked.length < 2 });
         save.setAttribute("aria-pressed", saved);
         save.title = saved ? "Saved in Combinations, under Your combinations (in this browser). Click to remove it."
@@ -3328,8 +3517,8 @@
         actions.append(copyLink, clear);
       }
 
-      // A cross or a stack: its values, the message and the actions together, centred under it.
-      if (size > 3) {
+      // A cross, a column or any other shape: its values, the message and the actions together, centred under it.
+      if (!under) {
         const values = document.createElement("div");
         values.className = "combo-values";
         values.append(info, note, actions);
@@ -3342,6 +3531,78 @@
       create.previewing = Boolean(preview);
       if (focusSlot !== undefined) blocks.children[focusSlot]?.focus();
       else focus();
+    }
+
+    // The line under the composition with a colour's name (every colour's the same way, see the CSS): the
+    // one under the pointer, else the one with the keyboard's focus, else the one selected; in a preview,
+    // the colour previewed. While a colour is dragged, see dragSlot. (Not read out: each colour is labelled.)
+    function nameLine(blocks, previewed) {
+      const line = Object.assign(document.createElement("p"), { className: "stage-name" });
+      line.setAttribute("aria-hidden", "true");
+      let hovered = null;
+      const show = () => {
+        if (previewed) return (line.textContent = previewed.name);
+        const focused = document.activeElement?.closest?.("[data-slot]");
+        const at = hovered ?? (blocks.contains(focused) ? focused : null) ?? blocks.querySelector('[aria-pressed="true"]');
+        line.textContent = at?.getAttribute("aria-label") ?? "";
+      };
+      blocks.addEventListener("pointerover", (e) => { hovered = e.target.closest("[data-slot]"); show(); });
+      blocks.addEventListener("pointerleave", () => { hovered = null; show(); });
+      blocks.addEventListener("focusin", show);
+      blocks.addEventListener("focusout", () => setTimeout(show)); // (once the focus has gone)
+      line.show = show;
+      setTimeout(show); // (once the composition is in the page, its focus restored)
+      return line;
+    }
+
+    // The switches above the composition, for how it's drawn (see create.layout): its direction, its
+    // shape and its main colour (none; one of its colours, by a square of each; or Auto, the weakest, by
+    // Wada's rule: weak tones on large areas, strong ones on small), and Reset (every one its default).
+    // Made once; then each time the composition is, each choice it has pressed, those that don't fit
+    // its number of colours shown off (the shapes of 3 and 4; a main colour but in a line or on a
+    // ground, where None is off: the ground is the first colour, if none is chosen), so the row doesn't move.
+    // A choice made: the composition drawn so (no colour selected, no message).
+    function setLayout(change) {
+      change(create.layout);
+      create.active = null;
+      create.note = "";
+      updateCreate();
+    }
+    function renderSwitches(layout) {
+      const box = views.create.querySelector(".combo-switches");
+      if (!box.firstChild) {
+        const group = (label, key, buttons) => `<div class="view-option" data-option="${key}"><span aria-hidden="true">${label}</span><div class="view-switch" role="group" aria-label="${label}">${buttons}</div></div>`;
+        box.innerHTML = group("Direction", "dir", '<button type="button" data-dir="row" title="In a row">Row</button><button type="button" data-dir="column" title="In a column">Column</button>')
+          + group("Shape", "shape", Object.entries(SHAPE_ICONS).map(([value, [title, svg]]) => `<button type="button" data-shape="${value}" title="${title}" aria-label="${title}"><svg viewBox="-8 -8 16 16" aria-hidden="true">${svg}</svg></button>`).join(""))
+          + group("Main", "main", '<button type="button" data-main="none" title="No main colour">None</button><span class="main-colours"></span><button type="button" class="auto" title="The weakest colour, by Wada\'s rule: weak tones on large areas, strong ones on small">Auto</button>')
+          + '<div class="view-option" data-option="reset"><div class="view-switch"><button type="button" title="Every switch back to its default">Reset</button></div></div>';
+        onChoice(box, "dir", (v) => setLayout((l) => (l.dir = v)));
+        onChoice(box, "shape", (v) => setLayout((l) => (l.shape = v)));
+        box.querySelector('[data-main="none"]').addEventListener("click", () => setLayout((l) => delete l.main));
+        box.querySelector(".auto").addEventListener("click", () => setLayout((l) => (l.main = create.picked.reduce((a, c) => (c.oklch[1] < a.oklch[1] ? c : a)))));
+        box.querySelector('[data-option="reset"] button').addEventListener("click", () => setLayout((l) => { for (const k of Object.keys(l)) delete l[k]; }));
+      }
+      const { picked } = create, n = Math.max(2, picked.length), few = picked.length < 2;
+      box.dataset.dir = layout.dir;
+      pressed(box, "dir", layout.dir);
+      pressed(box, "shape", layout.shape);
+      for (const b of box.querySelectorAll("[data-dir]")) b.disabled = few;
+      for (const b of box.querySelectorAll("[data-shape]")) b.disabled = few || !SHAPES[b.dataset.shape](n);
+      // The main colour's squares, made again (the focus kept on the same one) as the colours change.
+      const focus = focusIn(box), mains = box.querySelector(".main-colours"), offMain = few || !(layout.shape === "line" || layout.shape === "ground");
+      mains.replaceChildren(...picked.map((c, i) => {
+        const b = Object.assign(document.createElement("button"), { type: "button", title: `${c.name} as the main colour` });
+        b.dataset.main = i;
+        b.setAttribute("aria-label", b.title);
+        b.append(chipOf(c));
+        b.addEventListener("click", () => setLayout((l) => (l.main = c)));
+        return b;
+      }));
+      pressed(box, "main", layout.main == null ? "none" : String(layout.main));
+      for (const b of box.querySelectorAll("[data-main]")) b.disabled = offMain || (b.dataset.main === "none" && layout.shape === "ground");
+      box.querySelector(".auto").disabled = offMain;
+      box.querySelector('[data-option="reset"] button').disabled = !Object.keys(create.layout).length;
+      focus();
     }
 
     // A colour of the composition: click it, then another, to swap them (or then a colour in the
@@ -3362,8 +3623,12 @@
       return button;
     }
 
+    // Swapping two colours swaps what's drawn where: one moved into the main colour's place (the large
+    // band, the ground) is the main colour there.
     function swapSlots(a, b) {
-      const p = create.picked;
+      const p = create.picked, { main } = create.layout;
+      if (main === p[a]) create.layout.main = p[b];
+      else if (main === p[b]) create.layout.main = p[a];
       [p[a], p[b]] = [p[b], p[a]];
     }
 
@@ -3383,6 +3648,7 @@
       if (e.button !== 0 || !e.isPrimary) return;
       const x0 = e.clientX, y0 = e.clientY;
       const others = [...button.parentElement.querySelectorAll("[data-slot]")].filter((b) => b !== button);
+      const line = button.closest(".combo-figure")?.querySelector(".stage-name");
       let dragging = false, target = null;
       button.setPointerCapture(e.pointerId);
       const move = (ev) => {
@@ -3391,11 +3657,10 @@
         dragging = true;
         button.classList.add("dragging");
         button.style.transform = `translate(${dx}px, ${dy}px) scale(0.85)`; // smaller, to show the target
-        target = others.find((b) => {
-          const r = b.getBoundingClientRect();
-          return ev.clientX >= r.left && ev.clientX < r.right && ev.clientY >= r.top && ev.clientY < r.bottom;
-        }) ?? null;
+        // The colour seen under the pointer (a patch, not the ground under it), the dragged one aside.
+        target = document.elementsFromPoint(ev.clientX, ev.clientY).map((el) => el.closest("[data-slot]")).find((b) => others.includes(b)) ?? null;
         for (const b of others) b.classList.toggle("drop-target", b === target);
+        if (line) line.textContent = target ? `${button.getAttribute("aria-label")} ⇄ ${target.getAttribute("aria-label")}` : button.getAttribute("aria-label");
       };
       const end = (ev) => {
         button.removeEventListener("pointermove", move);
@@ -3422,7 +3687,10 @@
       const at = picked.indexOf(c);
       create.note = "";
       if (at >= 0) picked.splice(at, 1);
-      else if (create.active !== null) picked[create.active] = c;
+      else if (create.active !== null) {
+        if (create.layout.main === picked[create.active]) create.layout.main = c; // (its place's role too)
+        picked[create.active] = c;
+      }
       else if (picked.length < MAX_PICKED) picked.push(c);
       else create.note = `${MAX_PICKED} colours at most: click a picked colour to remove it, or select one in the combination to replace it.`;
       if (picked.includes(c)) remember(c);
@@ -3442,7 +3710,7 @@
       return { colors, at };
     }
 
-    // The colour picker: every colour, by family as in the Colors view, small, then the new colours picked
+    // The colour picker: every colour, by family as in Wada colours, small, then the new colours picked
     // (remembered); or, as the header's choice says, the OKLCH or Ostwald view, to pick any colour of its
     // slices. A picked colour shows its place in the combination (on the views, a numbered mark where it
     // is); hovering or focusing one shows its values above, and hovering one shows it in the composition
@@ -3675,7 +3943,7 @@
         // Under each colour when they're side by side (2 or 3); in rows for a cross or a stack.
         const info = infoFor(combo.colors, combo.kind === "season" || combo.colors.length === 4);
         const edit = document.createElement("a");
-        edit.href = `#create/${colorsCode(combo.colors)}`;
+        edit.href = `#create/${createCode(combo.colors, combo.kind === "season" ? { dir: "column", main: combo.colors[0] } : {})}`; // drawn there as here
         edit.textContent = "Edit in Create";
         const actions = document.createElement("p");
         actions.className = "actions";
@@ -3770,8 +4038,20 @@
         inRows.append(cell);
       }
       button.append(inGrid, inRows);
+      // In the cards layout: its values under it, as on its card.
+      const body = document.createElement("div");
+      body.className = "card-body detail-body";
+      const name = document.createElement("h3");
+      name.className = "named";
+      name.append(c.name, chipOf(c));
+      const cmyk = document.createElement("p");
+      cmyk.textContent = cmykText(c.cmyk);
+      const oklch = document.createElement("p");
+      oklch.className = "oklch-line";
+      oklch.append(Object.assign(document.createElement("span"), { textContent: oklchValues(c.oklch) }), copyButtonFor(c.css));
+      body.append(name, cmyk, oklch);
       const li = document.createElement("li");
-      li.append(button);
+      li.append(button, body);
       return li;
     }
 
@@ -3795,7 +4075,7 @@
     // cells stay as gaps. Near-neutral colours (no meaningful hue) form the inner ring, light to dark.
     // Returns the wheel, its info panel (the colour under the pointer), and mark(colours), which shows
     // a combination's colours on it.
-    // With `withViews` (the Colors page's wheel), it also returns `box`: the wheel with its switches. The
+    // With `withViews` (the Colour systems page's wheel), it also returns `box`: the wheel with its switches. The
     // view: Flat, the wheel above, every colour at once, its lightness left out; or 2D, a slice of OKLCH's
     // solid (lightness up its axis), across the axis (one lightness, seen from above, as the wheel is) or
     // through it (a hue's page and the opposite hue's, back to back), with its control beside it. The
@@ -3805,7 +4085,7 @@
     // one of Wada's colours or a point or cell of the slice, or clicking it, goes to the picker (hover(colour,
     // event), leave(), pick(colour); oklch([L, C, h]) makes a colour of the slice's one); and numbers(list)
     // marks the colours picked where they are on what's shown (badge(colour, number, [x, y], r) makes
-    // each mark). Its choices are saved apart from the Colors page's.
+    // each mark). Its choices are saved apart from the Colour systems page's.
     function makeWheel(colors, { withViews = false, picker = null } = {}) {
       const P = picker ? "create-" : ""; // its saved choices' and its ids' prefix
       // The range shown, Screen (Rec. 2020) or Print (the press), as the switch says (see gamut()); the
@@ -4027,7 +4307,7 @@
         drawFlat();
         return { panel, wheel, mark };
       }
-      // Its choices, remembered by the page (see below; on the Colors page, its switches' shared with the
+      // Its choices, remembered by the page (see below; on the Colour systems page, its switches' shared with the
       // other systems'); the range first, as everything's drawn in it.
       const { saved, save } = viewStore(P, sharedPrefix(picker), { "wheel-view": "view", "wheel-range": "range", "wheel-slicing": "slicing", "wheel-cut": "cut" });
       range = saved("wheel-range") === "print" && press ? "print" : "screen"; // (without what the press prints, Screen: see filesFor)
@@ -4359,7 +4639,7 @@
       placeDialLabels();
       dialFace.append(...dialLabels);
 
-      // The views (the Colors page's and Create's picker's), as the switches say (opt). The space: real, each colour at its own distance from the axis (√chroma), inside the
+      // The views (the Colour systems page's and Create's picker's), as the switches say (opt). The space: real, each colour at its own distance from the axis (√chroma), inside the
       // outline of what the range holds; or normalised, every hue (through the axis, every level) stretched
       // out to the rim, each colour at its share of the way out to its edge there, the greys' cell as it is.
       // The background, OKLCH's own colours: smooth; a grid, each cell its own colour, its border drawn;
@@ -5011,7 +5291,7 @@
       pressed(modes, "wheel-slicing", slicing);
       pressed(modes, "wheel-cut", cutFrom);
       setView(view);
-      // Shown again on the Colors page: the shared choices as they are now (another system's view may have
+      // Shown again on the Colour systems page: the shared choices as they are now (another system's view may have
       // changed them), drawn once.
       const adopt = () => {
         hide();
@@ -5040,7 +5320,7 @@
       for (const b of modes.querySelectorAll(`[data-${key}]`)) b.addEventListener("click", () => f(b.getAttribute(`data-${key}`)));
     }
 
-    // The views' own switches, the same in every system (the Colors page's, and Create's picker's):
+    // The views' own switches, the same in every system (the Colour systems page's, and Create's picker's):
     // the space, real or normalised; the background, the system's own colours, smooth, a grid, a grid with a
     // dot in each cell, only the dots, or none (in 3D, smooth walls or a smooth solid in smooth's place);
     // its strength, full or faded; and Wada's colours, on the grid, as dots or none. Each the same icon
@@ -5090,7 +5370,7 @@
       return (space ? optionSwitch("Space", "space", SPACE, space === true ? "" : space) : "") + optionSwitch("Background", "bg", BG) + optionSwitch("Background", "bg3", BG3)
         + optionSwitch("Strength", "strength", STRENGTH) + optionSwitch("Wada's", "wada", WADA);
     }
-    // The systems share their switches' choices, the Colors page's apart from Create's picker's: a system's
+    // The systems share their switches' choices, the Colour systems page's apart from Create's picker's: a system's
     // view's saved choices are its own (under `prefix`: the level, the pages), but its switches' (`aliases`:
     // its own names for the view, range, slice and cut; and the views' choices, v-...) are saved under
     // `shared` ("systems-", or the picker's "create-systems-"), the same for every system (see fitChoices).
@@ -5899,7 +6179,7 @@
     // With `picker` (the creator's), it's for picking colours: 2D only, and hovering a colour or a cell, or
     // clicking it, goes to the picker (hover(colour, event), leave(), pick(colour); own(cell, "ostwald") makes a
     // cell's colour one); and numbers(list) marks the colours picked on the slice shown (badge(colour,
-    // number, [x, y], r) makes each mark). Its choices are saved apart from the Colors page's.
+    // number, [x, y], r) makes each mark). Its choices are saved apart from the Colour systems page's.
     function makeOstwald(colors, { picker = null } = {}) {
       const { LETTERS, HUES, cell: cellMade, notation, sectorName, pageName, offHue, labAt, placeOf } = ostwaldShared();
       // A cell's own colour (as ostwaldShared's cell gives it), made once: every level drawn asks for its
@@ -6155,7 +6435,7 @@
       // The greys at the centre: round it, as its pie is split, lightest first.
       const centreDots = (list) => roundDots(list, 1 / N, emptyDot(0), centre);
 
-      // The Colors page's views, as the switches say (opt: the background, its strength and Wada's colours;
+      // The Colour systems page's views, as the switches say (opt: the background, its strength and Wada's colours;
       // Ostwald's space is regular as it is, so it has no space switch), Create's picker's too. The
       // background: smooth, the mixture continuous between the cells (labAt); a grid, each cell filled with its own colour; the cell with its dot; the dot alone; or
       // none. The empty cells are drawn as the CSS says (data-empty, from the background); a cell holding
@@ -6700,12 +6980,13 @@
       setCut(saved("cut") === "bottom" ? "bottom" : "top", false);
       setSlicing(saved("slicing") === "pages" ? "pages" : "level");
       setMode(savedMode());
-      // Shown again on the Colors page: the shared choices as they are now (another system's view may have
+      // Shown again on the Colour systems page: the shared choices as they are now (another system's view may have
       // changed them), drawn once.
       const adopt = () => {
         hide();
         setCut(saved("cut") === "bottom" ? "bottom" : "top", false);
         slicing = saved("slicing") === "pages" ? "pages" : "level";
+        if (saved("page") !== null) page = wrap(Number(saved("page")) | 0); // (as a link may have set it: see .prose a[data-layout])
         pageShown = page;
         pressed(modes, "slicing", slicing);
         peel = savedPeel(saved);
@@ -7098,7 +7379,7 @@
     // With `picker` (the creator's), as the Ostwald view: 2D only, and hovering a colour or a cell, or
     // clicking it, goes to the picker (hover(colour, event), leave(), pick(colour); own(cell, sys.key)
     // makes a cell's colour one); numbers(list) marks the colours picked on the slice shown (badge(colour,
-    // number, [x, y], r) makes each mark). Its choices are saved apart from the Colors page's.
+    // number, [x, y], r) makes each mark). Its choices are saved apart from the Colour systems page's.
     function makeNotation(colors, sys, { picker = null } = {}) {
       const { key: KEY, PAGES, LEVELS, JMAX, pageName, chip, grey } = sys;
       const N = LEVELS.length, DEG = 360 / PAGES, MID = (N - 1) / 2; // levels; a page's angle; the middle level (the pages' middle row)
@@ -8190,7 +8471,7 @@
       setCut(saved("cut") === "bottom" ? "bottom" : "top", false);
       setSlicing(savedSlicing());
       setMode(savedMode());
-      // Shown again on the Colors page: the shared choices as they are now (another system's view may have
+      // Shown again on the Colour systems page: the shared choices as they are now (another system's view may have
       // changed them), drawn once.
       const adopt = () => {
         hide();

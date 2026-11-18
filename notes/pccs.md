@@ -1,6 +1,6 @@
 # Wada's colours in PCCS
 
-PCCS, the Practical Color Co-ordinate System (日本色研配色体系), was made in 1964 by the Japan Color Research Institute, which grew out of the association Wada founded in 1927. It was made for colour harmony: besides hue, lightness and saturation, it groups colours into tones, and describes combinations by hue and tone. Nothing here is Wada's: he wrote colours in Ostwald's notation (see [ostwald.md](ostwald.md)), and PCCS came after him. The site's Colors › PCCS view shows it. [scripts/pccs.py](../scripts/pccs.py) computes it into `pccs.json`, from the Munsell notation [scripts/munsell.py](../scripts/munsell.py) computes (see [munsell.md](munsell.md)); the counts below are from the page.
+PCCS, the Practical Color Co-ordinate System (日本色研配色体系), was made in 1964 by the Japan Color Research Institute, which grew out of the association Wada founded in 1927. It was made for colour harmony: besides hue, lightness and saturation, it groups colours into tones, and describes combinations by hue and tone. Nothing here is Wada's: he wrote colours in Ostwald's notation (see [ostwald.md](ostwald.md)), and PCCS came after him. The site's Colour systems › PCCS view shows it. [scripts/pccs.py](../scripts/pccs.py) computes it into `pccs.json`, from the Munsell notation [scripts/munsell.py](../scripts/munsell.py) computes (see [munsell.md](munsell.md)); the counts below are from the page.
 
 ## Why it's built on Munsell's notation
 

@@ -54,5 +54,4 @@ Wada's rules, his kinds of harmony and his reading of the two January cards are 
 - **In Create:**
   - suggest his complementary pairs;
   - an option to put white, grey or black between colours, with Chevreul's advice on which to use;
-  - layouts that give strong colours less area;
   - a "large area" preview.
