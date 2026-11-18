@@ -8,6 +8,8 @@
   <link rel="icon" href="favicon.png" sizes="32x32">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- The theme chosen in this browser (light or dark; none: the system's), set before the page is drawn. -->
+  <script>try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
   <!-- Fetched at once, not once the whole page is in and its script runs: the font most text is in, and
        the data every view needs (the script's fetches then get these). -->
   <link rel="preload" href="fonts/DMMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
@@ -17,14 +19,22 @@
   <link rel="preload" href="seasons.json" as="fetch" crossorigin>
   <style>
     :root {
+      color-scheme: light;
       --bg: #fafaf7;
       --fg: #1d1d1b;
       --muted: #6e6e68;
       --line: #e3e3dd;
+      --page-l: 0.9843; /* --bg's OKLab lightness, for fading (see fadeBoost) */
       --info: 26ch; /* widest info line: OKLCH 0.5579 0.1582 357.38 */
       --mono: "DM Mono", "Noto Serif JP", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       --serif: "Source Serif 4", "Noto Serif JP", Georgia, serif;
     }
+    /* The dark theme: the system's, unless light is chosen, or chosen (the header's switch). The same four
+       colours, turned round; everything else follows them. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { color-scheme: dark; --bg: #181817; --fg: #e8e8e3; --muted: #9a9a93; --line: #34342f; --page-l: 0.2086; }
+    }
+    :root[data-theme="dark"] { color-scheme: dark; --bg: #181817; --fg: #e8e8e3; --muted: #9a9a93; --line: #34342f; --page-l: 0.2086; }
     /* DM Mono (SIL Open Font License, fonts/OFL.txt), from github.com/google/fonts/tree/main/ofl/dmmono,
        as WOFF2 (made with fontTools); the fallback shows until it's in (swap). It has no bold: Medium
        (500) is the heaviest weight. */
@@ -72,6 +82,11 @@
       color: var(--fg); text-decoration: underline; text-underline-offset: 0.25em;
     }
     .subnav a:hover, .subnav a:focus-visible { color: var(--fg); }
+    /* The theme's switch, after the sections: a circle half filled. */
+    .theme-switch { display: inline-grid; place-items: center; align-self: center; padding: 0.25rem; margin: -0.25rem; border: 0; background: none; color: var(--muted); cursor: pointer; }
+    .theme-switch:is(:hover, :focus-visible) { color: var(--fg); }
+    /* Where the sections go under the site's name, it goes top right, by the name, not on a row alone. */
+    @media (width < 891px) { .theme-switch { position: absolute; top: 1rem; right: 1.5rem; margin: 0; } .brand { padding-right: 2rem; } }
     /* A combination's pages: previous and next on the left, its tabs on the right; a tab with nothing
        in it is greyed out. */
     .combo-subnav { justify-content: space-between; }
@@ -109,11 +124,13 @@
       transition: opacity 0.6s ease, transform 0.6s ease; /* fade out */
       white-space: pre; text-align: left; line-height: 1.35;
     }
-    .swatch:hover span, .swatch:focus-visible span {
+    .swatch:focus-visible span {
       opacity: 1; transform: none;
       transition-duration: 0.12s; /* fade in */
     }
     .swatch:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+    /* Where a pointer can point (a tap leaves :hover stuck on, as here, after its dialog closes). */
+    @media (hover: hover) { .swatch:hover span { opacity: 1; transform: none; transition-duration: 0.12s; } }
 
     /* Rows layout: one full-width stripe per colour, edge to edge (cancels main's padding); the only
        space is between families, around their names. */
@@ -437,7 +454,8 @@
     /* A combination's colours on the wheel: the others faded (until hovered), its colours outlined and
        joined in hue order by a thin line (greys, near the centre, have no hue to join). */
     .wheel.marking .segment:not(.marked) { opacity: 0.2; }
-    .wheel.marking .segment:not(.marked):is(:hover, :focus-visible) { opacity: 1; }
+    .wheel.marking .segment:not(.marked):focus-visible { opacity: 1; }
+    @media (hover: hover) { .wheel.marking .segment:not(.marked):hover { opacity: 1; } }
     .wheel.marking .wheel-bg { opacity: 0.15; }
     .wheel .marks { fill: none; stroke: var(--fg); stroke-width: 0.008; pointer-events: none; }
     .wheel .shape { fill: none; stroke: var(--fg); stroke-width: 0.004; stroke-opacity: 0.6; pointer-events: none; }
@@ -508,6 +526,8 @@
     .atlas-disc:not([data-surface="smooth"]) .surface { pointer-events: none; cursor: auto; } /* only the smooth field is hovered between Wada's colours */
     .atlas-disc[data-bg="grid"] .empty { stroke: rgb(140 140 140 / 0.75); stroke-width: 0.0025; }
     .atlas-disc[data-strength="faded"] > .atlas-surface, .atlas-disc[data-strength="faded"] :is(.empty, .ideal) { opacity: 0.35; }
+    /* Faded, each cell's chroma raised first, the more the darker it is, so that dark slices keep their hues (see fadeBoost) */
+    .atlas-disc[data-strength="faded"][data-empty="filled"] .empty, .atlas-disc[data-strength="faded"] .ideal, .wheel-views[data-strength="faded"] .wheel .cell-dot { fill: oklch(from var(--own) l calc(c * (1 + 1.86 * clamp(0, (max(l - var(--page-l), var(--page-l) - l) - 0.3843) / 0.3, 1))) h); }
     /* Wada's colours, squares or dots, on whatever is round them: their own colour, ringed white, then dark round that (whatever the theme, as the field's colours are), so that each reads as a mark, not a hole, on light, dark and vivid colours alike (not in Create's picker, drawn as it was). No CSS filter on the dots: one each cost the GPU up to 300 ms a frame and showed nothing */
     .atlas-disc .colour-dot.on-field { stroke: rgb(255 255 255 / 0.95); stroke-width: 0.005; }
     .atlas-disc .dot-halo { fill: none; stroke: rgb(0 0 0 / 0.7); stroke-width: 0.0035; pointer-events: none; }
@@ -618,7 +638,7 @@
     /* A tone's code, a button: zooms into the tone, or (zoomed in) back to the map. */
     .atlas-disc .tone-link { cursor: pointer; outline: none; }
     .atlas-disc .tone-link .hit { fill: transparent; stroke: none; transition: fill 0.15s; }
-    .atlas-disc .tone-link:hover .hit { fill: color-mix(in srgb, var(--line) 45%, transparent); }
+    @media (hover: hover) { .atlas-disc .tone-link:hover .hit { fill: color-mix(in srgb, var(--line) 45%, transparent); } }
     .atlas-disc .tone-link:is(:hover, :focus-visible) .tone-code { fill: var(--fg); }
     .atlas-disc .tone-link:focus-visible .hit { stroke: var(--fg); stroke-width: 0.004; }
     .tone-back {
@@ -795,7 +815,7 @@
     }
     .prose .color-ref:is(:hover, :focus-visible) { text-decoration-color: currentColor; }
     .prose .ref-keep { white-space: nowrap; }
-    .prose .color-ref .chip { display: inline-block; margin-left: 0.75ch; vertical-align: -0.1em; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); } /* (White too) */
+    .prose .color-ref .chip { display: inline-block; margin-left: 0.75ch; vertical-align: -0.1em; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 12%, transparent); } /* (White too, or black on the dark page) */
     /* A hue circle: the full colours of Ostwald's 24 hues as a ring, yellow at the top and red at the right
        (as in the Ostwald view, the outer ring of its middle level).
        Its colours are notes/ostwald.py's cell_xyz(sector, 15, 0), the system's own (as index.html's
@@ -898,7 +918,7 @@
     .prose .dots > div + div { margin-top: 1.5rem; }
     .prose .dot-patch { display: block; width: 96px; height: 64px; padding: 0; border: 0; overflow: hidden; background: none; cursor: zoom-in; }
     .prose .dot-patch svg { display: block; transition: transform 0.3s; }
-    .prose .dot-patch:is(:hover, [aria-pressed="true"]) svg { transform: scale(6); }
+    .prose .dot-patch[aria-pressed="true"] svg { transform: scale(6); }
     .prose .dot-patch:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
     .prose .dots span { width: 64px; height: 64px; background: var(--c); }
     .prose .dots .pair { display: flex; flex-direction: column; }
@@ -956,7 +976,7 @@
     .prose .grounds .ground { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; background: var(--g); }
     .prose .grounds .ground.light { box-shadow: inset 0 0 0 1px var(--line); }
     .prose .grounds .ground span { width: 1.5rem; height: 1.5rem; background: var(--c); transition: width 0.3s, height 0.3s; }
-    .prose .grounds button:is(:hover, [aria-pressed="true"]) .ground span { width: 100%; height: 100%; }
+    .prose .grounds button[aria-pressed="true"] .ground span { width: 100%; height: 100%; }
     @media (max-width: 30rem) { .prose .grounds .ground { width: 3.75rem; height: 3.75rem; } .prose .grounds .ground span { width: 1.25rem; height: 1.25rem; } }
     @media (prefers-reduced-motion: reduce) { .prose .grounds .ground span { transition: none; } }
     /* Guidance's text on grounds: each pair of Wada's colours (data-fg on data-bg) as text on a ground, with their L below. */
@@ -973,7 +993,14 @@
     .prose .steps button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
     .prose .steps .lined { margin-top: 1.5rem; }
     .prose .steps span { width: 2.5rem; height: 4rem; background: var(--c); }
-    .prose .steps :is(button:is(:hover, [aria-pressed="true"]), .lined) span + span { box-shadow: inset 3px 0 #000; }
+    .prose .steps :is(button[aria-pressed="true"], .lined) span + span { box-shadow: inset 3px 0 #000; }
+    /* Pointing previews an experiment, where a pointer can point: a tap leaves :hover stuck on, so on touch
+       only a press shows it, and a second press takes it back. */
+    @media (hover: hover) {
+      .prose .dot-patch:hover svg { transform: scale(6); }
+      .prose .grounds button:hover .ground span { width: 100%; height: 100%; }
+      .prose .steps button:hover span + span { box-shadow: inset 3px 0 #000; }
+    }
     /* Wada's reading of one of his cards: the card (a link to its page), its reading beside it. */
     .prose .card-reading { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1.25rem; align-items: start; margin-top: 1.25rem; }
     .prose .card-reading > :first-child { margin-top: 0.3rem; }
@@ -1030,6 +1057,7 @@
         <a href="#seasons">Seasons</a>
         <a href="#create">Create</a>
         <a href="#about">About</a>
+        <button type="button" class="theme-switch" aria-label="Dark theme" aria-pressed="false"><svg viewBox="-8 -8 16 16" width="16" height="16" aria-hidden="true"><circle r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M 0 -6.5 A 6.5 6.5 0 0 1 0 6.5 Z" fill="currentColor"/></svg></button>
       </div>
     </nav>
     <div class="subnav" data-view="colors" role="group" aria-label="Colours layout">
@@ -1992,6 +2020,79 @@
       return v < 0 ? -e : e;
     }
 
+    // Faded (a view's Strength switch): its background at a third of its strength over the page (see the
+    // CSS). Colours far in lightness from the page, greyish to begin with, would all fade to one grey (on
+    // the light page, the dark colours), so each colour's chroma is raised before it's faded, the more the
+    // further it is from the page's lightness (--page-l): on the light page, not at all from L 0.6 up (the
+    // light colours fade as they always have), up to its full chroma's worth (1 / 0.35) at L 0.3 and below;
+    // on the dark page, the same distances the other way. The same in three places: the CSS (the cells
+    // drawn as shapes), fadedImage (the canvases) and FADE_LIFT (the 3D shaders).
+    let pageL = null; // (read once a theme, see themechange)
+    const fadeBoost = (L) => {
+      pageL ??= parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--page-l")) || 0.9843;
+      return 1 + 1.86 * Math.min(1, Math.max(0, (Math.abs(L - pageL) - 0.3843) / 0.3));
+    };
+    const FADE_LIFT = `vec3 fadeLift(vec3 c) {
+        vec3 w = vec3(0.2126, 0.7152, 0.0722);
+        float y = dot(c, w), L = pow(max(dot(pow(max(c, 0.0), vec3(2.2)), w), 0.0), 1.0 / 3.0), P = pow(max(dot(pow(max(u_bgc, 0.0), vec3(2.2)), w), 0.0), 1.0 / 3.0);
+        return max(vec3(y) + (c - vec3(y)) * (1.0 + 1.86 * clamp((abs(L - P) - 0.3843) / 0.3, 0.0, 1.0)), 0.0);
+      }`; // (on the colours as the canvas is given them, encoded: near enough for a background)
+    const FADED = '[data-strength="faded"]';
+    const SRGB_DECODE8 = Float32Array.from({ length: 256 }, (_, i) => { const v = i / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    const fadedImages = new WeakMap();
+    // A canvas's picture, its chroma raised for fading (as above, in OKLab), made once each: `image(w, h)`
+    // an empty one of the same kind.
+    function fadedImage(img, image) {
+      fadeBoost(0);
+      let out = fadedImages.get(img);
+      if (out?.pageL === pageL) return out;
+      out = image(img.width, img.height);
+      out.pageL = pageL;
+      const src = img.data, dst = out.data, float = img.pixelFormat === "rgba-float16", rgb = new Float64Array(3);
+      const dec = float ? (v) => { const a = Math.abs(v), l = a <= 0.04045 ? a / 12.92 : ((a + 0.055) / 1.055) ** 2.4; return v < 0 ? -l : l; } : (v) => SRGB_DECODE8[v];
+      const enc = float ? extendedCurve : (v) => SRGB_ENCODE[v <= 0 ? 0 : v >= 1 ? 4095 : (v * 4095 + 0.5) | 0];
+      for (let o = 0; o < src.length; o += 4) {
+        dst[o + 3] = src[o + 3];
+        if (!src[o + 3]) continue;
+        const r = dec(src[o]), g = dec(src[o + 1]), b = dec(src[o + 2]);
+        const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), q = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+        const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, k = fadeBoost(L);
+        if (k === 1) { dst[o] = src[o]; dst[o + 1] = src[o + 1]; dst[o + 2] = src[o + 2]; continue; }
+        oklabToLinearSRGB(L, (1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q) * k, (0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q) * k, rgb);
+        dst[o] = enc(rgb[0]); dst[o + 1] = enc(rgb[1]); dst[o + 2] = enc(rgb[2]);
+      }
+      fadedImages.set(img, out);
+      return out;
+    }
+    // Each canvas's picture shown faded or not, as what holds it says: put again when that changes, or
+    // the theme does.
+    const refaders = new WeakMap();
+    new MutationObserver((records) => {
+      for (const r of records) for (const c of r.target.querySelectorAll("canvas")) refaders.get(c)?.();
+    }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["data-strength"] });
+    // The theme: the system's, or the one chosen with the header's switch (kept in this browser). As it
+    // changes, "themechange" on window, for what draws with the page's colours (the faded canvases, the 3D views).
+    {
+      const dark = matchMedia("(prefers-color-scheme: dark)");
+      const changed = () => { pageL = null; for (const c of document.querySelectorAll("canvas")) refaders.get(c)?.(); dispatchEvent(new Event("themechange")); };
+      dark.addEventListener("change", () => { if (!document.documentElement.dataset.theme) changed(); });
+      const button = document.querySelector(".theme-switch");
+      const show = () => {
+        const isDark = (document.documentElement.dataset.theme ?? (dark.matches ? "dark" : "light")) === "dark";
+        button.setAttribute("aria-pressed", isDark);
+        button.title = isDark ? "Light theme" : "Dark theme";
+      };
+      button.addEventListener("click", () => {
+        const next = button.getAttribute("aria-pressed") === "true" ? "light" : "dark";
+        if (next === (dark.matches ? "dark" : "light")) { delete document.documentElement.dataset.theme; try { localStorage.removeItem("theme"); } catch {} } // (the system's again)
+        else { document.documentElement.dataset.theme = next; try { localStorage.setItem("theme", next); } catch {} }
+        show();
+        changed();
+      });
+      dark.addEventListener("change", show);
+      show();
+    }
+
     // OKLab -> linear sRGB (Ottosson's matrices), written into `out`: any colour, outside sRGB with values
     // beyond 0..1.
     function oklabToLinearSRGB(L, a, b, out = new Float64Array(3)) {
@@ -2225,6 +2326,17 @@
           const c = kind === "p3" ? times3(SRGB_TO_P3, rgb, p3) : rgb;
           px[o] = encode8(c[0]); px[o + 1] = encode8(c[1]); px[o + 2] = encode8(c[2]); px[o + 3] = 255 * alpha;
         };
+      // (Every picture is put through here, whole, at 0 0: kept, and shown faded where the view is.)
+      if (!refaders.has(canvas)) {
+        const putImage = ctx.putImageData.bind(ctx);
+        let picture = null, shown = null;
+        const refade = () => {
+          const want = picture && (canvas.closest(FADED) ? fadedImage(picture, image) : picture);
+          if (want && want !== shown) putImage((shown = want), 0, 0);
+        };
+        ctx.putImageData = (img) => { picture = img; shown = null; refade(); };
+        refaders.set(canvas, refade);
+      }
       return { ctx, image, put };
     }
     // A WebGL 2 canvas's drawing buffer, the widest (as above; float: RGBA16F, extended sRGB). Returns how to
@@ -3648,7 +3760,7 @@
       let hovered = null;
       const show = () => {
         if (previewed) return (line.textContent = previewed.name);
-        const focused = document.activeElement?.closest?.("[data-slot]");
+        const focused = document.activeElement?.closest?.("[data-slot]:focus-visible"); // (the keyboard's: a tap focuses too)
         const at = hovered ?? (blocks.contains(focused) ? focused : null) ?? blocks.querySelector('[aria-pressed="true"]');
         line.textContent = at?.getAttribute("aria-label") ?? "";
       };
@@ -4764,7 +4876,7 @@
       // A cell's dot: in its middle, as big as the cell leaves room for (rw across, aw along), its own colour.
       const cellDot = (x, y, rw, aw, tone) => svgEl("circle", {
         class: "cell-dot", cx: x.toFixed(4), cy: y.toFixed(4), r: Math.max(0.004, Math.min(0.012, 0.36 * Math.min(rw, aw))).toFixed(4),
-        fill: oklchText(tone.oklch.map((v) => +v.toFixed(4))),
+        fill: oklchText(tone.oklch.map((v) => +v.toFixed(4))), style: `--own: ${oklchText(tone.oklch.map((v) => +v.toFixed(4)))}`,
       });
       const blank = { key: "none", paint: () => { canvas.width = canvas.width; return null; } }; // (cleared)
       const cellLines = (list) => { if (list.length) layer.append(svgEl("path", { class: "cell-lines", d: list.join(" ") })); };
@@ -5598,7 +5710,7 @@
         if (!own) { path.style.pointerEvents = "none"; cells.append(path); return; }
         emptyOwn.set(path, own);
         cells.append(path);
-        if (!taken) cells.append(svgEl("circle", { class: "ideal", cx: x, cy: y, r: size, fill: own.css }));
+        if (!taken) cells.append(svgEl("circle", { class: "ideal", cx: x, cy: y, r: size, fill: own.css, style: `--own: ${own.css}` }));
       };
       // An empty cell, entered (as pointerenter, on the path itself), left, or clicked.
       const emptyAt = (e) => (emptyOwn.has(e.target) ? e.target : null);
@@ -8617,9 +8729,10 @@
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
       return program;
     }
-    // (Each read once: reading a canvas's pixel back waits for it, and reading the page's style brings it up
-    // to date first, tens of ms each as a solid is made. The page's colours are set once, in :root.)
+    // (Each read once a theme: reading a canvas's pixel back waits for it, and reading the page's style
+    // brings it up to date first, tens of ms each as a solid is made. The page's colours are set in :root.)
     const CSS_RGB = new Map(), CSS_VALUE = new Map();
+    addEventListener("themechange", () => CSS_VALUE.clear());
     function cssRGB(name) {
       if (!CSS_VALUE.has(name)) CSS_VALUE.set(name, getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888");
       const value = CSS_VALUE.get(name);
@@ -8845,7 +8958,8 @@
         }
         bool solidCard(float card) { return card > 0.5 && (u_bg < 0 ? u_empty != 3 : u_bg != 3 && u_bg != 4); }
         bool solidDotOnCard() { return u_bg < 0 ? u_empty == 2 : u_bg == 2; }
-        vec3 solidFaded(vec3 c, float other) { return u_bg >= 0 && (other == 1.0 || other == 3.0 || other == 4.0 || other > 7.5) ? mix(c, u_bgc, u_fade) : c; }`;
+        ${FADE_LIFT}
+        vec3 solidFaded(vec3 c, float other) { return u_bg >= 0 && (other == 1.0 || other == 3.0 || other == 4.0 || other > 7.5) && u_fade > 0.0 ? mix(fadeLift(c), u_bgc, u_fade) : c; }`;
     }
     function solidDotSize(radius) {
       return `// A lone dot's size, its own; bigger to pick, so it's easy to hover.
@@ -8894,9 +9008,14 @@
       gl.bindVertexArray(null);
 
       // The page's colours: card a little darker than the background, its edges and lines darker still.
-      const BG = wide.fromEncoded(cssRGB("--bg")), FG = wide.fromEncoded(cssRGB("--fg"));
+      let BG, FG, CARD, CARD_SIDE, LINE;
       const tint = (t) => BG.map((v, i) => v + (FG[i] - v) * t);
-      const CARD = tint(0.06), CARD_SIDE = tint(0.11), LINE = tint(0.2);
+      const pageColours = () => {
+        BG = wide.fromEncoded(cssRGB("--bg"));
+        FG = wide.fromEncoded(cssRGB("--fg"));
+        CARD = tint(0.06); CARD_SIDE = tint(0.11); LINE = tint(0.2);
+      };
+      pageColours();
 
       const DIST = 4.7; // the camera's distance
       // How far it sees up and down from the middle: 13°, the real solid's fit; or, for a shape that reaches
@@ -9069,6 +9188,7 @@
       };
       const request = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); }); };
       new ResizeObserver(request).observe(canvas);
+      addEventListener("themechange", () => { pageColours(); request(); });
       // Its GPU context lost (the GPU reset, or the browser short of memory): it waits, blank, for it to be
       // back (preventDefault asks for that), then the view makes it again (onRestored). Disposed, it's let go.
       let lost = false, disposed = false;
@@ -9356,6 +9476,7 @@
         uniform sampler2D u_edge; uniform sampler3D u_colour; uniform float u_y0, u_y1, u_inner, u_cutY, u_from, u_fade, u_start, u_step, u_dir, u_lo, u_hi; uniform bool u_norm; uniform ivec2 u_open; uniform int u_count, u_mode; uniform vec3 u_bgc, u_line;
         out vec4 colour;
         float edgeAt(float a, float y) { return textureLod(u_edge, vec2(a / 360.0 + 0.5 / ${NT}.0, ((y - u_y0) / (u_y1 - u_y0) * ${NY - 1}.0 + 0.5) / ${NY}.0), 0.0).r; }
+        ${FADE_LIFT}
         bool isOpen(int k) { return k < 32 ? ((u_open.x >> k) & 1) == 1 : ((u_open.y >> (k - 32)) & 1) == 1; }
         void main() {
           if ((v_y - u_cutY) * u_from > 1e-4) discard; // beyond the cut (where the vertices are put onto it, none)
@@ -9372,7 +9493,7 @@
           }
           float x = e > 1e-6 ? clamp(r / e, 0.0, 1.0) : 0.0;
           vec3 c = texture(u_colour, vec3(v_a / 360.0 + 0.5 / ${CT}.0, (t * ${CY - 1}.0 + 0.5) / ${CY}.0, (x * ${CX - 1}.0 + 0.5) / ${CX}.0)).rgb;
-          colour = vec4(mix(c, u_bgc, u_fade), 1.0);
+          colour = vec4(u_fade > 0.0 ? mix(fadeLift(c), u_bgc, u_fade) : c, 1.0);
         }`);
       const u = Object.fromEntries(["u_mvp", "u_edge", "u_colour", "u_y0", "u_y1", "u_inner", "u_peel", "u_faceY", "u_norm", "u_lo", "u_hi", "u_open", "u_count", "u_cutY", "u_from", "u_fade", "u_start", "u_step", "u_dir", "u_mode", "u_bgc", "u_line"].map((n) => [n, gl.getUniformLocation(program, n)]));
       const vao = gl.createVertexArray();
