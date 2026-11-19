@@ -612,17 +612,20 @@
     :is(.atlas-levels, .lightness-levels) .pointer { fill: var(--fg); }
     :is(.atlas-levels, .lightness-levels) text { font-family: inherit; pointer-events: none; }
     :is(.atlas-levels, .lightness-levels):focus-visible .strip { stroke: var(--fg); stroke-width: 2px; }
-    /* The solid's peel (3D): a vertical line across the outline, with a knob at each end, dragged
-       sideways; the shell's outline dashed. Only with the control's data-peel. */
-    :is(.atlas-levels, .lightness-levels) { overflow: visible; } /* (the peel's knobs, at the outline's widest) */
+    /* The solid's peel (3D): a strip under the outline, its strength from the greys out, faded beyond the
+       peel, the part kept outlined (as the level's slice); the shell's outline dashed, and fainter, the peel previewed.
+       Only with the control's data-peel. */
     :is(.atlas-levels, .lightness-levels) .peel { display: none; cursor: ew-resize; outline: none; }
     :is(.atlas-levels, .lightness-levels)[data-peel] .peel { display: inline; }
     :is(.atlas-levels, .lightness-levels) .peel-hit { fill: transparent; }
-    :is(.atlas-levels, .lightness-levels) .peel-line { stroke: var(--fg); stroke-width: 1.5px; }
-    :is(.atlas-levels, .lightness-levels) .peel-knob { fill: var(--bg); stroke: var(--fg); stroke-width: 1.5px; }
-    :is(.atlas-levels, .lightness-levels) .peel-shell { fill: none; stroke: var(--fg); stroke-width: 1px; stroke-dasharray: 3 2; }
-    :is(.atlas-levels, .lightness-levels) .peel:focus-visible .peel-knob { fill: var(--fg); }
-    :is(.atlas-levels, .lightness-levels) .peel:focus-visible .peel-line { stroke-width: 2.5px; }
+    :is(.atlas-levels, .lightness-levels) .peel-bar { fill: none; stroke: var(--muted); stroke-width: 1px; } /* as the level's strip */
+    :is(.atlas-levels, .lightness-levels) .peel-cells { opacity: 0.2; } /* peeled: faded, as the dial's slices hidden */
+    :is(.atlas-levels, .lightness-levels) .peel-cells rect { stroke: none; }
+    :is(.atlas-levels, .lightness-levels) .peel-kept { fill: none; stroke: var(--fg); stroke-width: 1.5px; }
+    :is(.atlas-levels, .lightness-levels) .peel-shell { fill: none; stroke: var(--fg); stroke-width: 1px; stroke-dasharray: 3 2; pointer-events: none; }
+    :is(.atlas-levels, .lightness-levels) .peel-ghost { fill: none; stroke: var(--fg); stroke-opacity: 0.5; stroke-width: 1px; stroke-dasharray: 3 2; pointer-events: none; }
+    :is(.atlas-levels, .lightness-levels) rect.peel-ghost { fill: var(--fg); fill-opacity: 0.05; }
+    :is(.atlas-levels, .lightness-levels) .peel:focus-visible .peel-bar { stroke: var(--fg); stroke-width: 2px; }
     /* Sliced through the axis (2D): the two pages, with their hues named at their tips, and the dial in
        the control's place: the solid's middle level seen from above, the two pages bright, the slice
        across it, and a pointer at the page on the right. */
@@ -665,26 +668,32 @@
     /* 3D (the Colour systems page's): the cake dial over the level control, its middle over the outline's
        axis and its top view about as wide as the outline (a plan over its elevation), the control shorter
        to make room, the two as tall as the control alone; on phones, below the solid. The top view, turned
-       with the solid, the slices hidden faded; the slices shown, a spiral from knob to knob (see cakeDial). */
+       with the solid, the slices hidden faded; the cut, and its pointers (see cakeDial). */
     .cake-box { display: none; }
     #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > .cake-box {
       display: block; grid-column: 3; justify-self: start; align-self: start;
-      width: calc(var(--h) * 0.186); margin: calc(var(--h) * 0.075) 0 0 calc(var(--h) * 0.032);
+      width: calc(var(--h) * 0.17); margin: calc(var(--h) * 0.07) 0 0 calc(var(--h) * 0.04);
     }
-    #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > :is(.atlas-levels, .lightness-levels) { height: calc(var(--h) * 0.62); align-self: end; margin-bottom: calc(var(--h) * 0.075); }
+    #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > :is(.atlas-levels, .lightness-levels) { height: calc(var(--h) * 0.646); align-self: end; margin-bottom: calc(var(--h) * 0.049); }
     @media (max-width: 600px) {
-      #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > .cake-box { grid-column: 1 / -1; grid-row: 4; justify-self: center; width: 9rem; margin: 1rem 0 0; }
+      #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > .cake-box { grid-column: 1 / -1; grid-row: 4; justify-self: center; width: 7.5rem; margin: 1rem 0 0; }
       #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > :is(.atlas-levels, .lightness-levels) { height: calc(var(--h) * 0.85); align-self: center; margin-bottom: 0; }
     }
     .cake-dial { display: block; width: 100%; height: auto; aspect-ratio: 1; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; }
     .cake-dial * { vector-effect: non-scaling-stroke; } /* strokes in screen pixels */
-    .cake-dial .hue { cursor: pointer; transition: opacity 0.15s; }
+    .cake-dial[data-aim="slice"] { cursor: pointer; }
+    .cake-dial[data-aim="pointer"] { cursor: grab; }
+    .cake-dial[data-aim="held"] { cursor: grabbing; }
+    .cake-dial .hue { transition: opacity 0.15s; }
     .cake-dial .hue.out { opacity: 0.2; }
     .cake-dial .hue path { stroke-width: 0.5px; } /* its own colour: no seams between cells */
     .cake-dial .rim { fill: none; stroke: var(--muted); stroke-width: 1px; pointer-events: none; }
-    .cake-dial :is(.cut, .spiral) { fill: none; stroke: var(--fg); stroke-width: 1.5px; stroke-linecap: round; pointer-events: none; }
-    .cake-dial .knob { fill: var(--bg); stroke: var(--fg); stroke-width: 1.5px; cursor: grab; outline: none; } /* as the peel's */
-    .cake-dial .knob:focus-visible { fill: var(--fg); }
+    .cake-dial .cut { stroke: var(--fg); stroke-width: 1.5px; pointer-events: none; }
+    .cake-dial .ghost { fill: none; stroke: var(--fg); stroke-width: 1px; stroke-dasharray: 3 2; pointer-events: none; } /* as the pages dial's */
+    .cake-dial path.ghost { fill: var(--fg); fill-opacity: 0.08; }
+    .cake-dial .pointer { fill: var(--fg); stroke: var(--fg); stroke-width: 0.5px; stroke-linejoin: round; outline: none; } /* (the stroke: no seam where the two meet) */
+    .cake-dial .pointer:focus-visible { stroke-width: 3px; }
+    .cake-dial:has(.pointer:focus-visible) .rim { stroke: var(--fg); stroke-width: 2px; }
     @media (prefers-reduced-motion: reduce) { .cake-dial .hue { transition: none; } }
     /* Round the dial, the named hues; the two pages', if named, bright, as their sectors are. */
     .dial-label { position: absolute; transform: translate(var(--dx), var(--dy)); color: var(--muted); font-size: 0.7rem; line-height: 1.2; white-space: nowrap; transition: color 0.15s; }
@@ -4817,8 +4826,7 @@
       // The page's, in 3D: the solid's peel, out from the greys to the outline's widest, and
       // the shell's outline (each lightness's width, its share of the way out from the greys).
       const peelControl = picker ? null : peelLine(control, {
-        ends: () => { halfWidth(0); return [CX + W * inner, CX + Math.max(W * inner + 0.1, ...widths)]; },
-        y0: levelY(0), y1: levelY(LEVELS),
+        axis: CX, ends: () => { halfWidth(0); return [CX + W * inner, CX + Math.max(W * inner + 0.1, ...widths)]; },
         shell: (p) => {
           halfWidth(0);
           const yAt = (k) => levelY((1 - k / 100) * LEVELS), w = (k) => (widths[k] <= W * inner ? widths[k] : W * inner + p * (widths[k] - W * inner));
@@ -4827,7 +4835,7 @@
         },
         set: (p) => setPeel(p),
       });
-      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
+      const cake = picker ? null : cakeDial(() => caption3d(), (left, right) => peelControl.paint(left, right)); // 3D's cake dial, above the control (see cakeDial)
 
       // Through the axis: hue slice s's page on the right, the opposite slice's (s + 18) on the left, the
       // greys between, white at the top; across, √chroma as on the disc; up, lightness. Each page's
@@ -5571,8 +5579,7 @@
       const showLook = () => {
         Object.assign(layout.dataset, { space: opt.space, bg: opt.bg, strength: opt.strength, wada: opt.wada });
         setCylinder(opt.space === "normalised");
-        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
-        else delete control.dataset.peel;
+        peelControl?.show(view === "3d", peel);
         for (const key of ["space", "strength", "wada"]) pressed(modes, key, opt[key]);
         pressed(modes, "bg", opt.bg);
         pressed(modes, "bg3", opt.bg);
@@ -5943,55 +5950,116 @@
       return words + (!space ? "" : opt.space === "normalised" ? " · normalised, a cylinder" : " · real space");
     }
 
-    // A level control's peel, for the solid in 3D: a vertical line across the solid's outline, at
-    // its strength p (0 at the greys to 1 at the edge: ends(), x0 and x1), from y0 to y1, with a knob at each end, and
-    // the shell's outline (shell(p): a path, or none) dashed. Dragged, or with the arrow keys while it has
-    // the focus (a slider of its own, in the control's tab order), it sets the peel (set(p)). Shown with
-    // the control's data-peel.
-    function peelLine(control, { ends, y0, y1, shell = () => "", set }) {
+    // A level control's peel, for the solid in 3D: under the solid's outline, a strip as wide as the
+    // outline's widest (its middle on the axis), its strength from the greys out, as the level's strip is
+    // its lightness: the solid seen from the side, at its widest (paint(left, right): the colours out from
+    // the greys of the pages on its left and right, as the dial has them, each [css, from, to], its share
+    // of the way out, as the peel's),
+    // faded beyond the peel, the part kept outlined (as the level's slice is); and on the outline, the
+    // shell's (shell(p): a path, or none). The peel p, its strength: 0 at the greys to 1 at the edge (ends():
+    // x0 and x1, on the right of the axis at axis). Pressed or dragged on the strip, either side of the axis
+    // (a drag stays on the side it began on: across the axis, the greys alone), or with the arrow keys or the mouse wheel while it has the focus (a slider of its own, in the
+    // control's tab order), it sets the peel (set(p)); hovered, it previews it. show(on, p):
+    // it, with the control taller to fit it (its data-peel set); place(p), redraw().
+    function peelLine(control, { axis, ends, shell = () => "", set }) {
+      const vb = control.getAttribute("viewBox").split(" ").map(Number), MORE = 1.4; // (the control's, and how much taller the strip makes it)
+      const BAR = vb[1] + vb[3] + 0.25, BH = 0.9; // the strip's top and height
       const g = svgEl("g", { class: "peel", tabindex: "0", role: "slider", "aria-label": "Peel, by strength", "aria-orientation": "horizontal", "aria-valuemin": 0, "aria-valuemax": 100 });
-      const path = svgEl("path", { class: "peel-shell" }), hit = svgEl("rect", { class: "peel-hit", y: y0 - 0.6, width: 2.2, height: y1 - y0 + 1.2 });
-      const line = svgEl("line", { class: "peel-line", y1: y0, y2: y1 }), knobs = [y0, y1].map((y) => svgEl("circle", { class: "peel-knob", cy: y, r: 0.38 }));
-      g.append(path, hit, line, ...knobs);
+      const path = svgEl("path", { class: "peel-shell" }), ghost = svgEl("path", { class: "peel-ghost" });
+      const id = `peel-${++peelLine.made}`, cells = svgEl("g", { class: "peel-cells", id: `${id}-cells` });
+      const clip = svgEl("clipPath", { id: `${id}-kept` }), kept = svgEl("rect", { y: BAR - 0.1, height: BH + 0.2 });
+      clip.append(kept);
+      const shown = svgEl("use", { href: `#${id}-cells`, "clip-path": `url(#${id}-kept)` }); // (the cells kept, unfaded)
+      const bar = svgEl("rect", { class: "peel-bar", y: BAR, height: BH });
+      const ghostKept = svgEl("rect", { class: "peel-ghost", y: BAR, height: BH }), keptEdge = svgEl("rect", { class: "peel-kept", y: BAR, height: BH });
+      const hit = svgEl("rect", { class: "peel-hit", y: BAR - 0.25, height: MORE });
+      g.append(clip, path, ghost, cells, shown, bar, ghostKept, keptEdge, hit);
       control.append(g);
-      let p = 1;
+      let p = 1, sides = [[], []];
+      const out = (q) => { const [x0, x1] = ends(); return x0 - axis + q * (x1 - x0); }; // how far out from the axis
+      const span = (rect, q) => { const r = out(q); rect.setAttribute("x", axis - r); rect.setAttribute("width", 2 * r); };
+      const preview = (q) => {
+        const on = q !== null && q !== p;
+        ghost.setAttribute("d", on && q < 1 ? shell(q) : "");
+        if (on) span(ghostKept, q);
+        ghostKept.setAttribute("visibility", on ? "visible" : "hidden");
+      };
       const place = (to) => {
         p = Math.round(Math.min(1, Math.max(0, to)) * 100) / 100;
-        const [x0, x1] = ends(), x = x0 + p * (x1 - x0);
-        hit.setAttribute("x", x - 1.1);
-        line.setAttribute("x1", x);
-        line.setAttribute("x2", x);
-        knobs.forEach((k) => k.setAttribute("cx", x));
+        const R = out(1);
+        cells.replaceChildren(...sides.flatMap((list, j) => list.map(([css, from, to]) => {
+          const a = out(from), b = out(to);
+          return svgEl("rect", { x: j ? axis + a : axis - b, y: BAR, width: b - a + 0.02, height: BH, fill: css }); // (a hair wider: no seams)
+        })));
+        // The greys, kept always (where there's a core of them): grey, as light as the colours next to them.
+        const lights = sides.map((list) => Number(/oklch\(([\d.]+)/.exec(list[0]?.[0] ?? "")?.[1])).filter(Number.isFinite);
+        if (out(0) > 0.05 && lights.length) cells.prepend(svgEl("rect", { x: axis - out(0) - 0.01, y: BAR, width: 2 * out(0) + 0.02, height: BH, fill: `oklch(${lights.reduce((x, y) => x + y) / lights.length} 0 0)` }));
+        bar.setAttribute("x", axis - R);
+        bar.setAttribute("width", 2 * R);
+        hit.setAttribute("x", axis - R - 0.9);
+        hit.setAttribute("width", 2 * R + 1.8);
+        span(kept, p);
+        span(keptEdge, p);
         path.setAttribute("d", p < 1 ? shell(p) : "");
         g.setAttribute("aria-valuenow", Math.round(p * 100));
         g.setAttribute("aria-valuetext", p === 1 ? "Not peeled, the whole solid" : `Peeled to ${Math.round(p * 100)}% of the way out`);
       };
-      const to = (e) => {
-        const box = control.getBoundingClientRect(), vb = control.viewBox.baseVal, [x0, x1] = ends();
-        return (vb.x + ((e.clientX - box.left) / box.width) * vb.width - x0) / (x1 - x0);
+      const go = (to) => { place(to); preview(null); set(p); };
+      // Where the pointer is, from the axis (left of it, less than 0); and the peel there, as far out from
+      // the axis as it is, either side (or only on side, 1 or -1: on the other, 0).
+      const from = (e) => { const box = control.getBoundingClientRect(), v = control.viewBox.baseVal; return v.x + ((e.clientX - box.left) / box.width) * v.width - axis; };
+      let side = 0; // a drag's
+      const at = (e) => {
+        const [x0, x1] = ends(), d = from(e), q = ((side ? side * d : Math.abs(d)) - (x0 - axis)) / (x1 - x0);
+        return Math.round(Math.min(1, Math.max(0, q)) * 100) / 100;
       };
       g.addEventListener("pointerdown", (e) => {
-        e.stopPropagation();
+        if (e.button > 0) return;
+        e.stopPropagation(); // (not the level's)
         e.preventDefault();
-        g.focus();
+        g.focus({ focusVisible: false });
         g.setPointerCapture(e.pointerId);
+        side = 0;
+        go(at(e));
+        side = from(e) < 0 ? -1 : 1;
       });
-      g.addEventListener("pointermove", (e) => { if (g.hasPointerCapture(e.pointerId)) { place(to(e)); set(p); } });
+      g.addEventListener("pointermove", (e) => {
+        if (g.hasPointerCapture(e.pointerId)) go(at(e));
+        else if (e.pointerType !== "touch") preview(at(e));
+      });
+      g.addEventListener("pointerleave", () => preview(null));
       const KEYS = { ArrowLeft: -0.05, ArrowDown: -0.05, ArrowRight: 0.05, ArrowUp: 0.05, PageDown: -0.25, PageUp: 0.25 };
       g.addEventListener("keydown", (e) => {
         const step = KEYS[e.key], home = e.key === "Home" ? 0 : e.key === "End" ? 1 : null;
         if (step === undefined && home === null) return;
         e.preventDefault();
         e.stopPropagation(); // (not the level's keys)
-        place(home ?? p + step);
-        set(p);
+        go(home ?? p + step);
       });
-      g.addEventListener("wheel", (e) => e.stopPropagation());
+      let spun = 0;
+      g.addEventListener("wheel", (e) => {
+        e.stopPropagation(); // (not the level's)
+        e.preventDefault();
+        spun += e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+        const steps = Math.trunc(spun / 100);
+        if (steps) { spun -= steps * 100; go(p - 0.05 * steps); } // (down, in: as the level's goes down)
+      }, { passive: false });
       const title = svgEl("title");
-      title.textContent = "Peel the solid by strength. Drag, or use the arrow keys";
+      title.textContent = "Peel the solid by strength: drag along the strip, or use the arrow keys";
       g.prepend(title);
-      return { place, redraw: () => place(p) };
+      return {
+        place, redraw: () => place(p),
+        paint: (left, right) => { sides = [left, right]; place(p); },
+        show: (on, to) => {
+          if (on) control.dataset.peel = "";
+          else delete control.dataset.peel;
+          control.setAttribute("viewBox", [vb[0], vb[1], vb[2], vb[3] + (on ? MORE : 0)].join(" "));
+          control.style.aspectRatio = on ? `${vb[2]} / ${vb[3] + MORE}` : "";
+          if (on) place(to);
+        },
+      };
     }
+    peelLine.made = 0; // (each its own ids)
 
     // A view's dial, to choose the pages shown (a hue on the right, the opposite one on the left): the hue
     // circle (dial, its rim; the view adds its colours under it), in its face, with labels round it, in its
@@ -6044,28 +6112,35 @@
 
     // 3D's cake dial (the page's), above the level control: the solid seen from above, turned as it is (the
     // side it's seen from at the bottom), each page's slice in its colours (copies of the view's dial's), the
-    // pages hidden faded; and round it, the slices shown, a spiral from one knob, where they start, clockwise
-    // and outwards to the other, where they end (so that, all of them shown, the two are at the same hour,
-    // one beyond the other, not one on the other). Dragging a knob takes slices out at its end of the spiral,
-    // or puts them back, as far as the whole solid or down to a slice (the spiral never loops), and on past
-    // them pushes the other knob along, turning the cut with it; dragging the top view turns the cut round, as the mouse wheel does; clicking a slice takes it out, or puts it back.
-    // The knobs are sliders too: the arrow keys move the one with the focus, Page Up and Page Down turn the
-    // cut. Pages hidden another way (the solid's labels) show on it, the knobs at the ends of the widest run
-    // shown (any hidden inside it faded); moving a knob hides or shows only the slices it passes.
-    // changed(): it hid or showed some. attach(solid, hues): the solid it cuts (its sectors, as the smooth
+    // pages hidden faded; the cut along its edges, and a pointer at each, outside the rim (as the pages
+    // dial's): each half of the pages dial's, on the side of the slices shown, the start's clockwise of its
+    // edge, the end's anticlockwise (so that, all of them shown, the two make one, at the same hour).
+    // Dragging a pointer takes slices out at its end, or puts them back, as far as the whole solid or down
+    // to a slice, and on past them pushes the other along, turning the cut with it; a press on the ring
+    // round the rim brings the nearer pointer there. Dragging the top view turns the cut round, as the mouse
+    // wheel does; clicking a slice takes it out, or puts it back. Hovered, it previews them, dashed: the
+    // edge a pointer would go to, or the slice. The pointers are sliders too: the arrow keys move the one
+    // with the focus, Page Up and Page Down turn the cut. Pages hidden another way (the solid's labels) show
+    // on it, the pointers at the ends of the widest run shown (any hidden inside it faded); moving a pointer
+    // hides or shows only the slices it passes.
+    // changed(): it hid or showed some; faced(left, right): the pages on the solid's left and right as it's
+    // seen, changed (their colours out from the greys, each [css, from, to], its share of the way out to
+    // the page's own edge: for the peel's strip).
+    // attach(solid, hues): the solid it cuts (its sectors, as the smooth
     // solid has them, and names; hidden(), hide(pages) and watch(f), f told where it's seen from as it's
     // drawn) and the view's dial's slices (a group per page); sync(): the pages hidden, read again;
     // detach(solid).
-    function cakeDial(changed) {
-      const D = 1.78, R_IN = 1.22, R_OUT = 1.56, KNOB = 0.13, NEAR = 0.3; // the dial's half-width; the knobs' distances from the middle (the top view's rim at 1), their radius, and how near one a press takes it
+    function cakeDial(changed, faced = () => {}) {
+      const D = 1.33, TIP = 1.03, BASE = 1.29, RING = 0.9, WIDE = 0.15; // the dial's half-width; the pointers' tips and bases, from the middle (the rim at 1); and where the ring round the rim starts
       const mod = (x, m) => ((x % m) + m) % m, rad = (deg) => (deg * Math.PI) / 180;
       const svg = svgEl("svg", { class: "cake-dial", viewBox: `${-D} ${-D} ${2 * D} ${2 * D}`, role: "group", "aria-label": "The slices of the solid shown" });
       const title = svgEl("title");
-      title.textContent = "The slices shown: drag a knob to take slices out or put them back, drag the solid round to turn the cut, or click a slice";
+      title.textContent = "The slices shown: drag a pointer to take slices out or put them back, drag the solid round to turn the cut, or click a slice";
       const turn = svgEl("g"), slices = svgEl("g"), rim = svgEl("circle", { class: "rim", r: 1 });
-      const cuts = [0, 1].map(() => svgEl("line", { class: "cut", x1: 0, y1: 0 })), spiral = svgEl("path", { class: "spiral" });
-      const knobs = ["from", "to"].map((end) => svgEl("circle", { class: "knob", r: KNOB, tabindex: "0", role: "slider", "aria-label": `The slices shown, ${end}` }));
-      turn.append(slices, rim, ...cuts, spiral, ...knobs);
+      const ghostCut = svgEl("line", { class: "ghost", x1: 0, y1: 0 }), ghostSlice = svgEl("path", { class: "ghost" });
+      const cuts = [0, 1].map(() => svgEl("line", { class: "cut", x1: 0, y1: 0 }));
+      const pointers = ["from", "to"].map((end) => svgEl("path", { class: "pointer", tabindex: "0", role: "slider", "aria-label": `The slices shown, ${end}` }));
+      turn.append(slices, rim, ghostSlice, ghostCut, ...cuts, ...pointers);
       svg.append(title, turn);
       const box = Object.assign(document.createElement("div"), { className: "cake-box" });
       box.append(svg);
@@ -6073,13 +6148,30 @@
       // edge on the anticlockwise side: the boundary c), seen from above with north at the top; pageOf(c),
       // its page (and slotOf, the slot of a page: the same).
       let solid = null, N = 0, step = 15, theta0 = 0, pageOf = (c) => c, names = [], az = 180, hues = [];
-      // The slots hidden; the knobs (the slices shown, s of them clockwise from boundary a: s 0, none; s N,
+      // The slots hidden; the pointers (the slices shown, s of them clockwise from boundary a: s 0, none; s N,
       // all); and a drag (or a key's or the wheel's step): mode, start, end or turn, from h0, a0 and s0.
       let hidden = new Set(), a = null, s = 0, drag = null;
       const onPlan = (r, bearing) => [r * Math.sin(rad(bearing)), -r * Math.cos(rad(bearing))];
+      // The slots on the solid's left and right as it's seen (from az), told when they change.
+      let facing = "";
+      const face = () => {
+        const at = (bearing) => mod(Math.floor((bearing - theta0) / step), N), left = at(az + 90), right = at(az - 90);
+        if (!hues.length || facing === `${left} ${right}`) return;
+        facing = `${left} ${right}`;
+        const out = (c) => { // (its cells' arcs: out from the greys to its own edge, as it's peeled: see solidPeel)
+          const list = [...hues[c].querySelectorAll("path")].map((cell) => {
+            const arcs = [...cell.getAttribute("d").matchAll(/A ([\d.]+)/g)].map((m) => Number(m[1]));
+            return [cell.getAttribute("fill"), arcs.length > 1 ? Math.min(...arcs) : 0, Math.max(...arcs)];
+          });
+          const r0 = Math.min(...list.map(([, r]) => r)), edge = Math.max(...list.map(([, , r]) => r)), share = (r) => (r - r0) / (edge - r0 || 1);
+          return list.map(([css, from, to]) => [css, share(from), share(to)]);
+        };
+        faced(out(left), out(right));
+      };
       const edge = (c) => theta0 + c * step;
-      // From the solid: the knobs at the ends of the widest run of slots hidden (of runs as wide, the one the
-      // start knob is at already); none hidden, where they were (at first, at the slot nearest the eye).
+      const cutTo = (line, at) => { const [x, y] = onPlan(TIP, at); line.setAttribute("x2", x); line.setAttribute("y2", y); }; // (from the middle to the pointer's tip)
+      // From the solid: the pointers at the ends of the widest run of slots hidden (of runs as wide, the one
+      // the start's is at already); none hidden, where they were (at first, at the slot nearest the eye).
       const derive = () => {
         hidden = new Set(solid.hidden().map(pageOf));
         if (!hidden.size || hidden.size === N) {
@@ -6100,35 +6192,31 @@
       const draw = () => {
         if (!solid) return;
         hues.forEach((g, c) => g.classList.toggle("out", hidden.has(c)));
-        const from = edge(a), span = s * step;
-        cuts.forEach((line, j) => {
-          const [x, y] = onPlan(1, from + j * span);
-          line.setAttribute("x2", x);
-          line.setAttribute("y2", y);
-          line.setAttribute("visibility", s > 0 && s < N ? "visible" : "hidden");
-        });
-        let d = "";
-        for (let j = 0, n = Math.max(2, Math.ceil(span / 3)); s && j <= n; j++) {
-          const [x, y] = onPlan(R_IN + ((R_OUT - R_IN) * j) / n, from + (span * j) / n);
-          d += `${j ? "L" : "M"} ${x.toFixed(4)} ${y.toFixed(4)} `;
-        }
-        spiral.setAttribute("d", d);
-        [onPlan(R_IN, from), onPlan(R_OUT, from + span)].forEach(([x, y], j) => {
-          knobs[j].setAttribute("cx", x);
-          knobs[j].setAttribute("cy", y);
+        [edge(a), edge(a + s)].forEach((at, j) => {
+          cutTo(cuts[j], at);
+          cuts[j].setAttribute("visibility", s > 0 && s < N ? "visible" : "hidden");
+          // Its pointer: a tip at the rim, and a base across the radius there, as wide as the pages dial's
+          // half, towards the slices shown ((cos, sin): clockwise along the rim); narrower if a slice is.
+          const w = Math.min(WIDE, TIP * Math.tan(rad(0.5 * step))), side = j ? -1 : 1, [bx, by] = onPlan(BASE, at);
+          pointers[j].setAttribute("d", `M ${onPlan(TIP, at).join(" ")} L ${bx} ${by} L ${bx + side * w * Math.cos(rad(at))} ${by + side * w * Math.sin(rad(at))} Z`);
         });
         const name = (c) => names[pageOf(mod(c, N))];
-        knobs[0].setAttribute("aria-valuenow", a);
-        knobs[0].setAttribute("aria-valuetext", s === N ? `The whole solid, from ${name(a)}` : s ? `From ${name(a)}` : "None shown");
-        knobs[1].setAttribute("aria-valuenow", mod(a + s, N));
-        knobs[1].setAttribute("aria-valuetext", s === N ? `The whole solid, to ${name(a - 1)}` : s ? `To ${name(a + s - 1)}` : "None shown");
+        pointers[0].setAttribute("aria-valuenow", a);
+        pointers[0].setAttribute("aria-valuetext", s === N ? `The whole solid, from ${name(a)}` : s ? `From ${name(a)}` : "None shown");
+        pointers[1].setAttribute("aria-valuenow", mod(a + s, N));
+        pointers[1].setAttribute("aria-valuetext", s === N ? `The whole solid, to ${name(a - 1)}` : s ? `To ${name(a + s - 1)}` : "None shown");
       };
-      // A step of the drag: k slots on from where it began. A knob passes slots: the end knob shows them
-      // going clockwise and hides them going back, the start knob the other way round; and on past a single
-      // slice, or the whole solid, it pushes the other knob along (the slice shown, or where the cut starts,
+      // A step of the drag: k slots on from where it began. A pointer passes slots: the end's shows them
+      // going clockwise and hides them going back, the start's the other way round; and on past a single
+      // slice, or the whole solid, it pushes the other along (the slice shown, or where the cut starts,
       // turning with it), the drag going on from there (base: the k it was pushed at). Turning moves every
       // slot hidden.
       const update = (k) => {
+        if (drag.mode === "either") { // (pressed where the two are one: the start's going clockwise, the end's back)
+          if (k === drag.base) return;
+          drag.mode = k > drag.base ? "start" : "end";
+          pointers[drag.mode === "start" ? 0 : 1].focus({ focusVisible: false });
+        }
         const { mode, h0, a0, s0, base } = drag, h = new Set(h0);
         k -= base;
         if (mode === "turn") {
@@ -6165,6 +6253,7 @@
       const begin = (mode) => { drag = { mode, h0: new Set(hidden), a0: a, s0: s, base: 0 }; };
       const finish = () => {
         drag = null;
+        svg.dataset.aim = "";
         derive();
         draw();
       };
@@ -6174,24 +6263,43 @@
         const t = rad(az - 180), x = x0 * Math.cos(t) - y0 * Math.sin(t), y = x0 * Math.sin(t) + y0 * Math.cos(t);
         return { x, y, r: Math.hypot(x, y), bearing: mod((Math.atan2(x, -y) * 180) / Math.PI, 360) };
       };
-      // A press: on a knob (or the ring it moves on, which takes it there at once), dragging it; on the top
-      // view, dragging turns the cut, and a click takes the slice out or puts it back.
+      // What a press there would do (p, from planAt): on the top view, turn the cut (or, a click, take the
+      // slice out or put it back); on the ring round it, move the nearer pointer (the nearer of their halves),
+      // there at once if it isn't (k slots on), then dragged.
+      const aim = (p) => {
+        if (p.r < RING) return { mode: "turn", slot: mod(Math.floor((p.bearing - theta0) / step), N), k: 0 };
+        const off = (deg) => mod(p.bearing - deg + 180, 360) - 180, half = (Math.atan(WIDE / TIP) * 90) / Math.PI;
+        const mode = Math.abs(off(edge(a) + half)) <= Math.abs(off(edge(a + s) - half)) ? "start" : "end";
+        let k = mod(Math.round((p.bearing - theta0) / step) - (mode === "start" ? a : a + s), N);
+        if (k > N / 2) k -= N;
+        const on = rad(Math.abs(off(edge(mode === "start" ? a : a + s)))) * p.r < WIDE;
+        return { mode: on && s % N === 0 ? "either" : mode, k: on ? 0 : k }; // (the two as one: whichever the drag opens the cut with, see update)
+      };
+      // Hovered (e; none: not), dashed: the edge a press would take a pointer to, or the slice it would
+      // take out or put back.
+      const preview = (e) => {
+        const t = e && solid && !drag && e.pointerType !== "touch" ? aim(planAt(e)) : null;
+        svg.dataset.aim = t ? (t.mode === "turn" ? "slice" : "pointer") : "";
+        if (t?.mode === "turn") {
+          const [x0, y0] = onPlan(1, edge(t.slot)), [x1, y1] = onPlan(1, edge(t.slot + 1));
+          ghostSlice.setAttribute("d", `M 0 0 L ${x0} ${y0} A 1 1 0 0 1 ${x1} ${y1} Z`);
+        }
+        if (t?.k) cutTo(ghostCut, edge((t.mode === "start" ? a : a + s) + t.k));
+        ghostSlice.setAttribute("visibility", t?.mode === "turn" ? "visible" : "hidden");
+        ghostCut.setAttribute("visibility", t?.k ? "visible" : "hidden");
+      };
       svg.addEventListener("pointerdown", (e) => {
         if (!solid || e.button > 0) return;
         e.preventDefault(); // no text selection
-        const p = planAt(e), off = (r, bearing) => { const [x, y] = onPlan(r, bearing); return Math.hypot(p.x - x, p.y - y); };
-        const toStart = off(R_IN, edge(a)), toEnd = off(R_OUT, edge(a + s)), onKnob = Math.min(toStart, toEnd) < NEAR;
-        const mode = onKnob ? (toStart <= toEnd ? "start" : "end") : p.r > 1.06 ? (p.r < (R_IN + R_OUT) / 2 ? "start" : "end") : "turn";
-        begin(mode);
-        Object.assign(drag, { acc: 0, last: p.bearing, x: e.clientX, y: e.clientY, moved: false, slot: mod(Math.floor((p.bearing - theta0) / step), N) });
+        const p = planAt(e), t = aim(p);
+        begin(t.mode);
+        Object.assign(drag, { acc: t.k * step, last: p.bearing, x: e.clientX, y: e.clientY, moved: false, slot: t.slot });
         svg.setPointerCapture(e.pointerId);
-        if (mode === "turn") return;
-        knobs[mode === "start" ? 0 : 1].focus();
-        if (onKnob) return;
-        let k = mod(Math.round((p.bearing - theta0) / step) - (mode === "start" ? a : a + s), N);
-        if (k > N / 2) k -= N;
-        drag.acc = k * step;
-        update(k);
+        preview(null);
+        if (t.mode === "turn") return;
+        svg.dataset.aim = "held";
+        pointers[t.mode === "start" ? 0 : 1].focus({ focusVisible: false }); // (its keys, without the keys' ring)
+        if (t.k) update(t.k);
       });
       svg.addEventListener("pointermove", (e) => {
         if (drag?.last === undefined || !svg.hasPointerCapture(e.pointerId)) return; // (a press's drag)
@@ -6202,7 +6310,9 @@
         drag.last = p.bearing;
         update(Math.round(drag.acc / step));
       });
-      svg.addEventListener("pointerup", () => {
+      svg.addEventListener("pointermove", (e) => { if (!drag) preview(e); });
+      svg.addEventListener("pointerleave", () => { if (!drag) preview(null); });
+      svg.addEventListener("pointerup", (e) => {
         if (drag?.last === undefined) return;
         if (drag.mode === "turn" && !drag.moved) {
           const c = drag.slot;
@@ -6211,9 +6321,10 @@
           changed();
         }
         finish();
+        preview(e);
       });
       svg.addEventListener("pointercancel", () => { if (drag?.last !== undefined) finish(); });
-      knobs.forEach((knob, j) => knob.addEventListener("keydown", (e) => {
+      pointers.forEach((pointer, j) => pointer.addEventListener("keydown", (e) => {
         const k = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key], t = { PageUp: 1, PageDown: -1 }[e.key];
         if (!solid || (k === undefined && t === undefined) || e.altKey || e.ctrlKey || e.metaKey) return;
         e.preventDefault(); // (not the level's keys: see onArrows)
@@ -6248,10 +6359,12 @@
             return g;
           });
           slices.replaceChildren(...hues);
-          knobs.forEach((knob) => { knob.setAttribute("aria-valuemin", 0); knob.setAttribute("aria-valuemax", N - 1); });
+          pointers.forEach((pointer) => { pointer.setAttribute("aria-valuemin", 0); pointer.setAttribute("aria-valuemax", N - 1); });
+          facing = "";
           made.watch((deg) => {
             az = deg;
             turn.setAttribute("transform", `rotate(${180 - deg})`);
+            face();
           });
           drag = null;
           derive();
@@ -6287,7 +6400,7 @@
       area.addEventListener("pointermove", (e) => {
         const held = area.hasPointerCapture(e.pointerId);
         if (!held && e.pointerType === "touch") return;
-        moved = [held, at(e)];
+        moved = [held, held || !e.target.closest?.(".peel") ? at(e) : get()]; // (over the peel, its own: the value as it is)
         if (!frame) frame = requestAnimationFrame(() => { frame = 0; const [h, v] = moved; moved = null; (h ? set : preview)(v); });
       });
       area.addEventListener("pointerleave", () => { cancelAnimationFrame(frame); frame = 0; moved = null; preview(get()); });
@@ -6905,7 +7018,7 @@
       // The page's, in 3D: the solid's peel, out from the axis to the equator, and the shell's
       // outline, the cone at that share of its width.
       const peelControl = picker ? null : peelLine(control, {
-        ends: () => [CX, CX + W], y0: 1, y1: 2 * N - 1,
+        axis: CX, ends: () => [CX, CX + W],
         shell: (p) => `M ${CX} 1 L ${CX + p * W} ${N} L ${CX} ${2 * N - 1} L ${CX - p * W} ${N} Z`,
         set: (p) => {
           peel = p;
@@ -6914,7 +7027,7 @@
           caption3d();
         },
       });
-      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
+      const cake = picker ? null : cakeDial(() => caption3d(), (left, right) => peelControl.paint(left, right)); // 3D's cake dial, above the control (see cakeDial)
       // 2D (the disc) or 3D (the whole solid, made when first asked for).
       const modes = Object.assign(document.createElement("div"), { className: "view-modes" });
       // In 3D, where the cut is from: the top (the lower part stays) or the bottom. Each choice is drawn
@@ -7516,8 +7629,7 @@
         modes.querySelector('[data-option="bg3"]').hidden = view !== "3d";
         if (solidLook && solidLook !== String(ballsInCells())) remake3d();
         solid?.look(opt, caption3d);
-        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
-        else delete control.dataset.peel;
+        peelControl?.show(view === "3d", peel);
       };
       function loadLook() {
         opt = prefs.load(disc.dataset.mode);
@@ -8017,8 +8129,7 @@
       // The page's, in 3D: the solid's peel, out from the greys to the outline's widest, and the
       // shell's outline (each level's width, its share of the way out from the greys).
       const peelControl = picker ? null : peelLine(control, {
-        ends: () => { halfWidth(0); return [CX + W * INNER, CX + Math.max(...widths)]; },
-        y0: 0, y1: N * CH,
+        axis: CX, ends: () => { halfWidth(0); return [CX + W * INNER, CX + Math.max(...widths)]; },
         shell: (p) => {
           halfWidth(0);
           const w = (u) => W * INNER + p * (widths[u] - W * INNER), side = (sign) => widths.flatMap((_, u) => [`${CX + sign * w(u)} ${u * CH}`, `${CX + sign * w(u)} ${(u + 1) * CH}`]);
@@ -8031,7 +8142,7 @@
           caption3d();
         },
       });
-      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
+      const cake = picker ? null : cakeDial(() => caption3d(), (left, right) => peelControl.paint(left, right)); // 3D's cake dial, above the control (see cakeDial)
 
       // The switches: the view (Flat, 2D or 3D, made when first asked for) and the range; then, as in the
       // other views, the slicing (2D), the space, the background, its strength, Wada's colours (see
@@ -9024,8 +9135,7 @@
         for (const b of [...spaceOption.querySelectorAll("button"), smoothChoice]) b.disabled = tones;
         option("bg").hidden = view === "3d";
         option("bg3").hidden = view !== "3d";
-        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
-        else delete control.dataset.peel;
+        peelControl?.show(view === "3d", peel);
       };
       const loadLook = () => {
         opt = prefs.load(viewKey());
