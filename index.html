@@ -8837,10 +8837,11 @@
       return { eye, R, U, F, f, aspect, mvp };
     }
     // Turning a solid by hand: dragging it (a press that hardly moves is a tap), or the arrow keys while it
-    // has the focus. Hovering picks what's under the pointer once a frame. The solid's own: turn(dAz, dEl),
-    // hover(e) (null: nothing, as the pointer leaves or a drag starts) and tap(e).
+    // has the focus. Hovering picks what's under the pointer as it moves (the browser sends a move a frame
+    // at most; hover reads one at a time). The solid's own: turn(dAz, dEl), hover(e) (null: nothing, as the
+    // pointer leaves or a drag starts) and tap(e).
     function orbitInput(canvas, { turn, hover, tap }) {
-      let drag = null, moved = null, picking = false;
+      let drag = null;
       canvas.addEventListener("pointerdown", (e) => {
         canvas.setPointerCapture(e.pointerId);
         drag = { x: e.clientX, y: e.clientY, moved: false };
@@ -8855,15 +8856,7 @@
           turn(dx * 0.4, dy * 0.4);
           return;
         }
-        if (e.pointerType === "touch") return;
-        moved = e;
-        if (picking) return;
-        picking = true;
-        requestAnimationFrame(() => {
-          picking = false;
-          if (moved && !drag) hover(moved);
-          moved = null;
-        });
+        if (e.pointerType !== "touch") hover(e);
       });
       canvas.addEventListener("pointerup", (e) => {
         const tapped = drag && !drag.moved;
@@ -8872,7 +8865,6 @@
       });
       canvas.addEventListener("pointercancel", () => { drag = null; });
       canvas.addEventListener("pointerleave", (e) => {
-        moved = null;
         if (!drag && e.pointerType !== "touch") hover(null);
       });
       const KEYS = { ArrowLeft: [-15, 0], ArrowRight: [15, 0], ArrowUp: [0, 10], ArrowDown: [0, -10] };
@@ -9149,12 +9141,13 @@
         return smooth;
       };
       // smoothPick: the pixel's place on the smooth solid (picking found it there), its surfaces alone.
-      // later: the pixel read without waiting for the GPU (into `pbo`, fenced: see pickLater), returning -2.
+      // later: the pixel copied without waiting for the GPU (into `pbo`, the id's at 0, the place's at 4;
+      // fenced and read later: see pickLater), returning -2.
       const pbo = gl.createBuffer();
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, pbo);
-      gl.bufferData(gl.PIXEL_PACK_BUFFER, 4, gl.STREAM_READ);
+      gl.bufferData(gl.PIXEL_PACK_BUFFER, 8, gl.STREAM_READ);
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-      let pending = null; // a pixel being read: { sync, smoothPick, px, py }
+      let pending = null; // a pixel being read: { sync, both }
       const draw = (px = -1, py = -1, smoothPick = false, later = false) => {
         if (lost) return -1;
         resize();
@@ -9219,10 +9212,8 @@
         let id = -1;
         if (picking && later) {
           gl.bindBuffer(gl.PIXEL_PACK_BUFFER, pbo);
-          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, smoothPick ? 4 : 0);
           gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-          pending = { sync: gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0), smoothPick, px, py };
-          gl.flush();
           id = -2;
         } else if (picking) {
           const px4 = new Uint8Array(4);
@@ -9284,33 +9275,37 @@
       const idAt = (e) => { const at = pixelAt(e); return at ? draw(...at) : -1; }; // (at once: a tap)
       // Hovering: the pixel under the pointer read without stalling for the GPU (as readPixels at once does,
       // a frame's drawing long at a high pixel ratio): drawn for picking, its pixel copied, and the result
-      // taken a frame or so later, when the GPU is done; then (on the smooth solid) its place the same way.
-      // One at a time: the newest pointer waits (`next`); `ask` drops a result asked for before the pointer left.
-      let next = null, ask = 0;
+      // taken a frame or so later, when the GPU is done; with the smooth solid shown, its place too, drawn and
+      // copied with it (so that both come in one wait), used if the pixel is on it.
+      // One at a time: the newest pointer waits (`next`), and is read once the one before it is shown (each
+      // shown as it comes, so that, moving, it keeps up); `left` drops a result asked for before the pointer left.
+      let next = null, left = 0;
       const pickLater = (e) => {
-        ask++;
-        if (!e) { next = null; hover(-1); return; }
-        const at = pixelAt(e);
-        if (!at) { next = null; hover(-1); return; }
+        const at = e && pixelAt(e);
+        if (!at) { left++; next = null; hover(-1); return; }
         if (pending) { next = at; return; }
-        start(at, false, ask);
+        start(at, left);
       };
-      const start = ([x, y], smoothPick, asked) => {
-        if (lost || draw(x, y, smoothPick, true) !== -2) return;
+      const start = ([x, y], asked) => {
+        if (lost || draw(x, y, false, true) !== -2) return;
+        const both = !!smoothNow() && draw(x, y, true, true) === -2;
+        pending = { sync: gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0), both };
+        gl.flush();
         const wait = () => {
           if (lost || !pending) { pending = null; return; }
           if (gl.getSyncParameter(pending.sync, gl.SYNC_STATUS) !== gl.SIGNALED) { requestAnimationFrame(wait); return; }
           gl.deleteSync(pending.sync);
-          const px4 = new Uint8Array(4);
+          const px8 = new Uint8Array(8);
           gl.bindBuffer(gl.PIXEL_PACK_BUFFER, pbo);
-          gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, px4);
+          gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, px8);
           gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
           const was = pending;
           pending = null;
-          const id = was.smoothPick ? smooth?.place(px4) ?? -1 : px4[0] + px4[1] * 256 + px4[2] * 65536 - 1;
-          if (!was.smoothPick && id === SMOOTH_ID && smoothNow()) { start([was.px, was.py], true, asked); return; }
-          if (next) { const at = next; next = null; start(at, false, ask); return; } // (a newer pointer: its own, instead)
-          if (asked === ask) hover(id);
+          let id = px8[0] + px8[1] * 256 + px8[2] * 65536 - 1;
+          if (id === SMOOTH_ID) id = was.both ? smooth?.place(px8.subarray(4)) ?? -1 : -1;
+          if (asked === left) hover(id);
+          if (frame) { cancelAnimationFrame(frame); frame = 0; draw(); } // (shown in this frame, not the next)
+          if (next) { const at = next; next = null; start(at, left); } // (a newer pointer: its own, next)
         };
         requestAnimationFrame(wait);
       };
