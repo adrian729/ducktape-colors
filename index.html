@@ -178,6 +178,10 @@
     .blocks .ground.swatch span { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .blocks .swatch { aspect-ratio: auto; height: 100%; padding: 0.5rem; container-type: size; } /* measured: see below */
     .blocks .swatch span { white-space: normal; text-align: center; } /* the colour name */
+    /* The book's lists: the colours of a card out of sight aren't styled, laid out or painted until they
+       come near it (all 348 would be, each time the page opens). A card's blocks are as big whether they
+       are or not (their width, and their aspect ratio), so the page is laid out the same. */
+    :is(#combinations-view > section:not(.yours), #seasons-view) .blocks { content-visibility: auto; }
     /* Sub-navigation choice: only the combinations with that many colours (of yours too: see below). */
     #combinations-view[data-show="2"] > :not([data-size="2"], .yours),
     #combinations-view[data-show="3"] > :not([data-size="3"], .yours),
@@ -2040,6 +2044,12 @@
     const FADED = '[data-strength="faded"]';
     const SRGB_DECODE8 = Float32Array.from({ length: 256 }, (_, i) => { const v = i / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
     const fadedImages = new WeakMap();
+    // Every half float (by its bits) decoded from extended sRGB to linear, made the first time it's needed.
+    let halfTable = null;
+    const halfDecode = () => halfTable ??= Float64Array.from(new Float16Array(Uint16Array.from({ length: 65536 }, (_, i) => i).buffer), (v) => {
+      const a = Math.abs(v), l = a <= 0.04045 ? a / 12.92 : ((a + 0.055) / 1.055) ** 2.4;
+      return v < 0 ? -l : l;
+    });
     // A canvas's picture, its chroma raised for fading (as above, in OKLab), made once each: `image(w, h)`
     // an empty one of the same kind.
     function fadedImage(img, image) {
@@ -2049,15 +2059,18 @@
       out = image(img.width, img.height);
       out.pageL = pageL;
       const src = img.data, dst = out.data, float = img.pixelFormat === "rgba-float16", rgb = new Float64Array(3);
-      const dec = float ? (v) => { const a = Math.abs(v), l = a <= 0.04045 ? a / 12.92 : ((a + 0.055) / 1.055) ** 2.4; return v < 0 ? -l : l; } : (v) => SRGB_DECODE8[v];
+      // (Half floats read as their bits, decoded by a table of all 65536: the same values as decoding each.
+      // A pixel not raised is copied as its bits.)
+      const bits = float ? new Uint16Array(src.buffer, src.byteOffset, src.length) : src, out16 = float ? new Uint16Array(dst.buffer, dst.byteOffset, dst.length) : dst;
+      const table = float ? halfDecode() : SRGB_DECODE8;
       const enc = float ? extendedCurve : (v) => SRGB_ENCODE[v <= 0 ? 0 : v >= 1 ? 4095 : (v * 4095 + 0.5) | 0];
       for (let o = 0; o < src.length; o += 4) {
-        dst[o + 3] = src[o + 3];
+        out16[o + 3] = bits[o + 3];
         if (!src[o + 3]) continue;
-        const r = dec(src[o]), g = dec(src[o + 1]), b = dec(src[o + 2]);
+        const r = table[bits[o]], g = table[bits[o + 1]], b = table[bits[o + 2]];
         const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), q = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
         const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * q, k = fadeBoost(L);
-        if (k === 1) { dst[o] = src[o]; dst[o + 1] = src[o + 1]; dst[o + 2] = src[o + 2]; continue; }
+        if (k === 1) { out16[o] = bits[o]; out16[o + 1] = bits[o + 1]; out16[o + 2] = bits[o + 2]; continue; }
         oklabToLinearSRGB(L, (1.9779984951 * l - 2.428592205 * m + 0.4505937099 * q) * k, (0.0259040371 * l + 0.7827717662 * m - 0.808675766 * q) * k, rgb);
         dst[o] = enc(rgb[0]); dst[o + 1] = enc(rgb[1]); dst[o + 2] = enc(rgb[2]);
       }
@@ -2109,7 +2122,7 @@
     const SRGB_TO_REC2020 = [[0.6274038959, 0.3292830384, 0.0433130657], [0.0690972894, 0.9195403951, 0.0113623156], [0.0163914389, 0.0880133079, 0.8955952532]];
     const SRGB_TO_P3 = [[0.8224621209, 0.1775378791, 0], [0.0331941989, 0.9668058011, 0], [0.0170826307, 0.0723974407, 0.9105199286]];
     const times3 = (m, v, out = new Float64Array(3)) => {
-      const [x, y, z] = v;
+      const x = v[0], y = v[1], z = v[2]; // (not destructured: an iterator each call, in hot loops)
       for (let r = 0; r < 3; r++) out[r] = m[r][0] * x + m[r][1] * y + m[r][2] * z;
       return out;
     };
@@ -2150,9 +2163,21 @@
         return cusps;
       };
       const idle = window.requestIdleCallback ?? ((f) => setTimeout(() => { const end = performance.now() + 8; f({ timeRemaining: () => end - performance.now() }); }));
+      // The most chroma at each hundredth of lightness, over every 2° of hue (the solid's width, as the OKLCH
+      // view's level control draws it): each made once, when first asked for, or by prepare() after the cusps.
+      const widest = new Float64Array(101).fill(-1);
+      g.widest = (k) => {
+        if (widest[k] < 0) {
+          let w = 0;
+          if (k > 0 && k < 100) for (let h = 0; h < 360; h += 2) w = Math.max(w, g.most(k / 100, h)); // (none at black and white)
+          widest[k] = w;
+        }
+        return widest[k];
+      };
       g.prepare = () => idle(function step(deadline) {
         fill(() => deadline.timeRemaining() > 1);
-        if (!cusps) idle(step);
+        for (let k = 0; cusps && k <= 100 && deadline.timeRemaining() > 1; k++) g.widest(k);
+        if (!cusps || widest.includes(-1)) idle(step);
       });
       const mean = (a, b) => (a + ((((b - a) % 360) + 540) % 360 - 180) / 2 + 360) % 360; // halfway, the shorter way round
       const [R, Y, G, Cy, B, M] = g.primaries;
@@ -2160,15 +2185,23 @@
       return g;
     }
     function screenGamut() {
-      const v = new Float64Array(3), w = new Float64Array(3);
+      const [[N00, N01, N02], [N10, N11, N12], [N20, N21, N22]] = SRGB_TO_REC2020;
       const most = (L, h) => {
         if (L <= 0 || L >= 1) return 0;
         const rad = (h * Math.PI) / 180, cos = Math.cos(rad), sin = Math.sin(rad);
         let lo = 0, hi = 0.5;
         for (let i = 0; i < 17; i++) { // to within 0.5 / 2^17
-          const mid = (lo + hi) / 2;
-          times3(SRGB_TO_REC2020, oklabToLinearSRGB(L, mid * cos, mid * sin, v), w);
-          if (w[0] >= -1e-9 && w[0] <= 1 + 1e-9 && w[1] >= -1e-9 && w[1] <= 1 + 1e-9 && w[2] >= -1e-9 && w[2] <= 1 + 1e-9) lo = mid;
+          const mid = (lo + hi) / 2, a = mid * cos, b = mid * sin;
+          // (oklabToLinearSRGB, then SRGB_TO_REC2020, written out: the same sums in the same order, so the
+          // same numbers, without the calls, a hot loop's most of the time)
+          const l_ = L + 0.3963377774 * a + 0.2158037573 * b, l = l_ * l_ * l_;
+          const m_ = L - 0.1055613458 * a - 0.0638541728 * b, m = m_ * m_ * m_;
+          const s_ = L - 0.0894841775 * a - 1.291485548 * b, s = s_ * s_ * s_;
+          const x = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+          const y = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+          const z = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+          const r = N00 * x + N01 * y + N02 * z, g = N10 * x + N11 * y + N12 * z, bl = N20 * x + N21 * y + N22 * z;
+          if (r >= -1e-9 && r <= 1 + 1e-9 && g >= -1e-9 && g <= 1 + 1e-9 && bl >= -1e-9 && bl <= 1 + 1e-9) lo = mid;
           else hi = mid;
         }
         return lo;
@@ -2389,9 +2422,30 @@
       const route = location.hash.slice(1).split("/")[0];
       return Object.hasOwn(views, route) ? route : "colors";
     }
+    // The views not made yet, as [view, make] pieces in the order they're made (the reading pages' figures
+    // are one, "reading"). A view is made whole before it's shown (makeView); the rest, once the page is
+    // shown, one piece a task (makeRest), so that the page is drawn first and stays answering meanwhile.
+    let unmade = [];
+    function makeView(name) {
+      const view = READING[name] ? "reading" : name;
+      if (!unmade.some(([v]) => v === view)) return;
+      for (const piece of unmade.filter(([v]) => v === view)) piece[1]();
+      unmade = unmade.filter(([v]) => v !== view);
+    }
+    function makeRest(first = true) {
+      if (!unmade.length) return;
+      const next = () => setTimeout(() => {
+        const piece = unmade.shift();
+        if (piece) piece[1]();
+        makeRest(false);
+      });
+      if (first) requestAnimationFrame(next); // (after the page is first drawn)
+      else next();
+    }
     function showView(afterLoad = false) {
       const [, arg, tab] = location.hash.slice(1).split("/");
       const name = showHeader(); // the header's script (in the page, so as to show the header right from the start)
+      makeView(name);
       const stayed = views[name] && !views[name].hidden; // (the same view as before: a link within the page)
       for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
       if (detail.open) detail.close();
@@ -2706,9 +2760,12 @@
       for (const combo of seasons) for (const c of combo.colors) seasonsOf[c.index].push(combo);
       data = { colors, combos, combosOf, seasons, seasonsOf };
 
+      // The views are made in turn (see unmade): the one the page opens on first, then, once it's shown, the
+      // others, a piece a task.
+      const pieces = [];
       // Colors: one grid per colour family (the book groups its colours by hue), in book order, under
       // its name. Colours only in Volume 2 are where its colour index puts them. Then the wheel.
-      for (const family of families) {
+      pieces.push(["colors", () => { for (const family of families) {
         const section = document.createElement("section");
         section.append(Object.assign(document.createElement("h2"), { className: "group-heading", textContent: family.name }));
         const ul = document.createElement("ul");
@@ -2716,11 +2773,11 @@
         ul.append(...family.colors.map((i) => swatchItem(colors[i])));
         section.append(ul);
         views.colors.append(section);
-      }
+      } }]);
 
       // Combinations: in book order, in the book's three sections (2, 3 and 4 colours), each under its
       // name and its numbers.
-      for (const [size, name] of SECTIONS) {
+      for (const [size, name] of SECTIONS) pieces.push(["combinations", () => {
         const list = combos.filter((combo) => combo.colors.length === size);
         const heading = Object.assign(document.createElement("h2"), { className: "group-heading", textContent: name });
         const range = Object.assign(document.createElement("span"), { textContent: `${comboLabel(list[0])}–${comboLabel(list.at(-1))}` });
@@ -2732,15 +2789,15 @@
         section.dataset.size = size; // for the sub-navigation's choice of size
         section.append(heading, ul);
         views.combinations.append(section);
-      }
-      // ... after your combinations, if any (see renderYours).
+      }]);
+      // ... after your combinations, if any (see renderYours): made at once, as Create adds to them.
       yours.section = Object.assign(document.createElement("section"), { className: "yours" });
       views.combinations.prepend(yours.section);
       loadYours();
       renderYours();
 
       // Seasons: month by month, in book order.
-      MONTHS.forEach((month, m) => {
+      pieces.push(["seasons", () => MONTHS.forEach((month, m) => {
         const heading = Object.assign(document.createElement("h2"), { className: "group-heading", textContent: month });
         const ul = document.createElement("ul");
         ul.className = "combos seasons";
@@ -2749,14 +2806,16 @@
         section.dataset.month = m + 1; // for the sub-navigation's choice of month
         section.append(heading, ul);
         views.seasons.append(section);
-      });
+      })]);
 
       buildPicker(colors, families);
       // (The Colour systems page's systems' views are made when first shown: see showLayout.)
       // Prepare the wheel background's hue table while the page is idle, so opening the wheel is quick.
       gamut("screen").prepare();
-      fillReading(colors, combos, seasons);
+      pieces.push(["reading", () => fillReading(colors, combos, seasons)]);
+      unmade = pieces;
       showView(true); // a #combination/<number> (or #season, #create) link opened directly needs the data
+      makeRest();
     } catch (error) {
       console.error(error);
       // Which files, and why (their status); and, opened as a file (or with no server answering), how to
@@ -2900,7 +2959,14 @@
       };
       fitChoices(layout);
       if (layouts.has(layout)) show();
-      settle("systems", !layouts.has(layout) && (() => filesFor(layout, "").then((message) => {
+      settle("systems", !layouts.has(layout) && (() => filesFor(layout, "").then(async (message) => {
+        // (Its system's colours worked out first, then the view made from them, after the browser has had
+        // its turn: two tasks, not one long one.)
+        const model = { ostwald: ostwaldShared, munsell: munsellShared, pccs: pccsShared }[layout];
+        if (!message && model) {
+          model();
+          await new Promise((next) => nextTurn(next));
+        }
         const { colors } = data;
         const made = message ? { box: missingSystem(message) } : layout === "oklch" ? makeWheel(colors, { withViews: true }) : layout === "ostwald" ? makeOstwald(colors)
           : makeNotation(colors, layout === "munsell" ? munsellShared() : pccsShared());
@@ -4691,11 +4757,7 @@
       const outline = svgEl("path", { class: "outline" });
       let widths = null; // the solid's half-width per 0.01 of lightness, made when first shown (once per range)
       let cylinder = false; // normalised space: every lightness out to the rim, the solid a cylinder (setCylinder)
-      const widthAt = (k) => {
-        let widest = 0;
-        for (let h = 0; h < 360; h += 2) widest = Math.max(widest, most(k / 100, h));
-        return W * rho(widest);
-      };
+      const widthAt = (k) => W * rho(G.widest(k)); // (the range's, made while the page was idle, if it has been)
       // (Made ahead, a few lightnesses an idle moment, for the range shown, so that first showing 2D needn't.)
       const ahead = { of: "", widths: [] };
       const widthsAhead = (idle) => {
@@ -6362,14 +6424,26 @@
         return a0 + f * (mod(SECTOR_ANGLES[mod(s0 + 1, 24)] - a0 + 180, 360) - 180);
       };
       const [M0, M1, M2] = XYZ_TO_LMS, [N0, N1, N2] = LMS_TO_OKLAB;
+      // ray(theta)'s distance and X + Y + Z, and tintEdge(its edge, r), into out: the edge's two entries
+      // either side of r, worked out as ray() works out every one (labAt asks for them at every pixel).
+      const rayEdge = (theta, r, out) => {
+        const [p, q, t] = between(theta), pe = p[3], qe = q[3];
+        out[0] = p[0] + t * (q[0] - p[0]);
+        out[1] = p[1] + t * (q[1] - p[1]);
+        const x = Math.min(Math.max(r, 0), 1) * STEPS, k = Math.min(Math.trunc(x), STEPS - 1);
+        const e0 = pe[k] + t * (qe[k] - pe[k]), e1 = pe[k + 1] + t * (qe[k + 1] - pe[k + 1]);
+        out[2] = e0 + (x - k) * (e1 - e0);
+        return out;
+      };
+      const rayOut = new Float64Array(3);
       const labAt = (sectorF, a, b, out) => {
         const ga = greyAt(a), gb = greyAt(b);
         let X, Y, Z;
         if (sectorF === null || a - b < 1e-9) [X, Y, Z] = [WHITE[0] * ga, WHITE[1] * ga, WHITE[2] * ga];
         else {
-          const theta = angleAt(sectorF), [dF, sF, edge] = ray(theta), r = (gb - ga) / gb;
+          const theta = angleAt(sectorF), r = (gb - ga) / gb, e = rayEdge(theta, r, rayOut), dF = e[0], sF = e[1], edgeY = e[2];
           const u = (r * sF) / (SW * (1 - r) + r * sF), x = XW + u * dF * Math.cos(theta * RAD), y = YW + u * dF * Math.sin(theta * RAD);
-          Y = gb * tintEdge(edge, r);
+          Y = gb * edgeY;
           X = (x * Y) / y;
           Z = ((1 - x - y) * Y) / y;
         }
@@ -8736,6 +8810,7 @@
     function cssRGB(name) {
       if (!CSS_VALUE.has(name)) CSS_VALUE.set(name, getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888");
       const value = CSS_VALUE.get(name);
+      if (!CSS_RGB.has(value) && /^#[0-9a-f]{6}$/i.test(value)) CSS_RGB.set(value, [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16) / 255)); // (the page's colours: as the canvas would give them)
       if (!CSS_RGB.has(value)) {
         const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
         ctx.fillStyle = value;
@@ -9661,7 +9736,8 @@
       // A dot: a 12-sided disc round `centre`, in the plane of u and v.
       const dot = (centre, u, v, radius, rgb, level, kind, id) => {
         const p = (i) => { const t = (i * Math.PI) / 6; return centre.map((c, j) => c + radius * (Math.cos(t) * u[j] + Math.sin(t) * v[j])); };
-        for (let i = 0; i < 12; i++) triangle(faces, centre, p(i), p(i + 1), rgb, 1, level, kind, 0, id, DOTS + UNDER);
+        const rim = Array.from({ length: 13 }, (_, i) => p(i)); // (each worked out once, not twice)
+        for (let i = 0; i < 12; i++) triangle(faces, centre, rim[i], rim[i + 1], rgb, 1, level, kind, 0, id, DOTS + UNDER);
       };
       const rgbOf = (c) => wide.screen(linearOf(c.oklch)); // any colour: the screen clips what it can't show
 
