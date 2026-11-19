@@ -574,7 +574,7 @@
     /* On the Colour systems page and in Create's picker, the switches in a row of their own above the disc, centred, in the same place
        in every system (the disc's size, and the caption's length, change below them); on wide screens the disc smaller by that row */
     :is(#systems-view, .picker) .view-modes { grid-column: 1 / -1; grid-row: 1; justify-self: center; justify-content: center; width: 0; min-width: 100%; }
-    :is(#systems-view, .picker) :is(.atlas-disc, .atlas-levels, .dial-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
+    :is(#systems-view, .picker) :is(.atlas-disc, .atlas-levels, .dial-box, .cake-box, .wheel-views > .wheel, .lightness-levels) { grid-row: 2; }
     :is(#systems-view, .picker) .view-caption { grid-row: 3; }
     :is(#systems-view, .picker) :is(.wheel-box, .ostwald-box, .munsell-box) :is([data-option="slicing"], [data-option="wheel-slicing"]) { margin-right: calc(1.75em + 1px); } /* room for PCCS's third (the tones) in every system, so that the centred row doesn't move */
     @media (min-width: 601px) { #systems-view :is(.atlas, .wheel-views) { --h: min(calc(100vh - 14.5rem), calc((100vw - 7rem) / 1.72)); } }
@@ -612,7 +612,7 @@
     :is(.atlas-levels, .lightness-levels) .pointer { fill: var(--fg); }
     :is(.atlas-levels, .lightness-levels) text { font-family: inherit; pointer-events: none; }
     :is(.atlas-levels, .lightness-levels):focus-visible .strip { stroke: var(--fg); stroke-width: 2px; }
-    /* The smooth solid's peel (3D): a vertical line across the outline, with a knob at each end, dragged
+    /* The solid's peel (3D): a vertical line across the outline, with a knob at each end, dragged
        sideways; the shell's outline dashed. Only with the control's data-peel. */
     :is(.atlas-levels, .lightness-levels) { overflow: visible; } /* (the peel's knobs, at the outline's widest) */
     :is(.atlas-levels, .lightness-levels) .peel { display: none; cursor: ew-resize; outline: none; }
@@ -662,6 +662,30 @@
     .hue-dial .ghost { stroke: var(--fg); stroke-width: 1px; stroke-dasharray: 3 2; } /* the pages previewed under the pointer */
     .hue-dial .pointer { fill: var(--fg); }
     .hue-dial:focus-visible .rim { stroke: var(--fg); stroke-width: 2px; }
+    /* 3D (the Colour systems page's): the cake dial over the level control, its middle over the outline's
+       axis and its top view about as wide as the outline (a plan over its elevation), the control shorter
+       to make room, the two as tall as the control alone; on phones, below the solid. The top view, turned
+       with the solid, the slices hidden faded; the slices shown, a spiral from knob to knob (see cakeDial). */
+    .cake-box { display: none; }
+    #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > .cake-box {
+      display: block; grid-column: 3; justify-self: start; align-self: start;
+      width: calc(var(--h) * 0.186); margin: calc(var(--h) * 0.075) 0 0 calc(var(--h) * 0.032);
+    }
+    #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > :is(.atlas-levels, .lightness-levels) { height: calc(var(--h) * 0.62); align-self: end; margin-bottom: calc(var(--h) * 0.075); }
+    @media (max-width: 600px) {
+      #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > .cake-box { grid-column: 1 / -1; grid-row: 4; justify-self: center; width: 9rem; margin: 1rem 0 0; }
+      #systems-view :is(.atlas, .wheel-views)[data-view="3d"] > :is(.atlas-levels, .lightness-levels) { height: calc(var(--h) * 0.85); align-self: center; margin-bottom: 0; }
+    }
+    .cake-dial { display: block; width: 100%; height: auto; aspect-ratio: 1; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .cake-dial * { vector-effect: non-scaling-stroke; } /* strokes in screen pixels */
+    .cake-dial .hue { cursor: pointer; transition: opacity 0.15s; }
+    .cake-dial .hue.out { opacity: 0.2; }
+    .cake-dial .hue path { stroke-width: 0.5px; } /* its own colour: no seams between cells */
+    .cake-dial .rim { fill: none; stroke: var(--muted); stroke-width: 1px; pointer-events: none; }
+    .cake-dial :is(.cut, .spiral) { fill: none; stroke: var(--fg); stroke-width: 1.5px; stroke-linecap: round; pointer-events: none; }
+    .cake-dial .knob { fill: var(--bg); stroke: var(--fg); stroke-width: 1.5px; cursor: grab; outline: none; } /* as the peel's */
+    .cake-dial .knob:focus-visible { fill: var(--fg); }
+    @media (prefers-reduced-motion: reduce) { .cake-dial .hue { transition: none; } }
     /* Round the dial, the named hues; the two pages', if named, bright, as their sectors are. */
     .dial-label { position: absolute; transform: translate(var(--dx), var(--dy)); color: var(--muted); font-size: 0.7rem; line-height: 1.2; white-space: nowrap; transition: color 0.15s; }
     .dial-label:is(.on, :hover) { color: var(--fg); }
@@ -4790,7 +4814,7 @@
       };
       const { slice, ghost, marker, pointer, mark: markLevel } = levelMarks(CX, levelY, (i) => halfWidth(lightOf(i)));
       control.append(svgEl("rect", { class: "strip", x: 0, y: 0, width: 1.8, height: 32 }), outline, ghost, marker, slice, pointer);
-      // The page's, in 3D on the smooth solid: its peel, out from the greys to the outline's widest, and
+      // The page's, in 3D: the solid's peel, out from the greys to the outline's widest, and
       // the shell's outline (each lightness's width, its share of the way out from the greys).
       const peelControl = picker ? null : peelLine(control, {
         ends: () => { halfWidth(0); return [CX + W * inner, CX + Math.max(W * inner + 0.1, ...widths)]; },
@@ -4803,6 +4827,7 @@
         },
         set: (p) => setPeel(p),
       });
+      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
 
       // Through the axis: hue slice s's page on the right, the opposite slice's (s + 18) on the left, the
       // greys between, white at the top; across, √chroma as on the disc; up, lightness. Each page's
@@ -5277,7 +5302,7 @@
         + viewSwitches(`${P}wheel-view`) + optionSwitch("Slice", "wheel-slicing", SLICES) + optionSwitch("Cut", "wheel-cut", CUTS);
       const option = (key) => modes.querySelector(`[data-option="${key}"]`);
       const slicingOption = option("wheel-slicing"), cutOption = option("wheel-cut");
-      layout.append(wheel, control, dialBox, caption, modes);
+      layout.append(wheel, control, dialBox, ...(cake ? [cake.box] : []), caption, modes);
       box.append(panel, layout);
 
       // What's shown, remembered by the page: the range, the view, the slicing; the level (8: lightness 0.6),
@@ -5442,9 +5467,11 @@
           s.peel(peel);
           s.cut(shown);
           s.side(cutFrom, false);
+          cake?.attach(s, dialHues());
           caption3d();
         },
         detach: (s) => {
+          cake?.detach(s);
           if (solid === s) solid = null;
           solidFrom = s.state();
           s.unhover();
@@ -5521,9 +5548,13 @@
         const C = (r * edge) ** 2;
         return { oklch: [L, C, h], key: `point ${L.toFixed(4)} ${C.toFixed(4)} ${h.toFixed(1)}`, line: `Lightness ${num(L)}, chroma ${num(C)}, hue ${Math.round(h)}°, in the smooth solid. ` };
       };
-      // The smooth solid's peel (its shell's strength), saved; and the caption, as it's peeled or opened.
+      // The solid's peel (its shell's strength), saved; and the caption, as it's peeled or opened.
       let peel = savedPeel(saved);
-      const caption3d = () => { if (view === "3d") drawLevel(shown, level, false); };
+      const caption3d = () => {
+        if (view !== "3d") return;
+        drawLevel(shown, level, false);
+        cake?.sync();
+      };
       const still3d = caption3d;
       const prefs = viewPrefs(saved, save, sharedDefaults); // (the page's switches, saved per view: Flat, 2D, 3D)
       const setPeel = (p) => {
@@ -5540,7 +5571,7 @@
       const showLook = () => {
         Object.assign(layout.dataset, { space: opt.space, bg: opt.bg, strength: opt.strength, wada: opt.wada });
         setCylinder(opt.space === "normalised");
-        if (view === "3d" && opt.bg === "solid") { control.dataset.peel = ""; peelControl.place(peel); }
+        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
         else delete control.dataset.peel;
         for (const key of ["space", "strength", "wada"]) pressed(modes, key, opt[key]);
         pressed(modes, "bg", opt.bg);
@@ -5683,7 +5714,7 @@
     // empty cells show (data-empty, for the CSS and the 3D solid).
     const CELL_BGS = ["grid", "griddot", "dots"];
     const EMPTY_OF = { smooth: "hidden", walls: "filled", solid: "filled", grid: "filled", griddot: "dots", dots: "points", none: "hidden" };
-    // The smooth solid's peel as saved (0 to 1: its shell's strength), the whole solid if none.
+    // The solid's peel as saved (0 to 1: its shell's strength), the whole solid if none.
     function savedPeel(saved) {
       const p = Number(saved("v-3d-peel") ?? 1);
       return Number.isFinite(p) ? Math.min(1, Math.max(0, p)) : 1;
@@ -5880,25 +5911,39 @@
       return { slice, ghost, marker, pointer, mark };
     }
 
-    // A 3D view's caption's words for what's shown (opt, the switches): the background, faded or not; the
-    // smooth solid's peel and its wedges out (opened: their hues' names), or the pages hidden; Wada's
-    // colours; and the space (if the system has the switch).
+    // The pages hidden (list: their indices, of count round the solid), named for a caption: a run of three
+    // or more next to each other as its first to its last (round past the last page to the first), the rest
+    // each by its own name (name(k)).
+    function pageRuns(list, count, name) {
+      const hidden = new Set(list), runs = [];
+      if (hidden.size === count) return [`${name(0)} to ${name(count - 1)}`];
+      for (let k = 0; k < count; k++) {
+        if (!hidden.has(k) || hidden.has((k + count - 1) % count)) continue; // (a run's first)
+        let n = 1;
+        while (hidden.has((k + n) % count)) n++;
+        if (n >= 3) runs.push([k, `${name(k)} to ${name((k + n - 1) % count)}`]);
+        else for (let j = 0; j < n; j++) runs.push([(k + j) % count, name((k + j) % count)]);
+      }
+      return runs.sort((p, q) => p[0] - q[0]).map(([, text]) => text);
+    }
+    // A 3D view's caption's words for what's shown (opt, the switches): the background, faded or not; its
+    // peel; the smooth solid's wedges out (opened: their hues' names, see pageRuns), or the pages hidden;
+    // Wada's colours; and the space (if the system has the switch).
     function solidWords(opt, { peel = 1, opened = [], inCells = false, space = true }) {
       const list = (all) => {
-        const names = all.map((n) => n.replace(/^Hue /, "hue "));
+        const names = all.map((n) => n.replace(/\bHue /g, "hue "));
         return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
       };
+      const many = opened.length > 1 || opened.some((n) => n.includes(" to ")); // (a run of them is several)
       const BG = { walls: "smooth walls", solid: "the smooth solid", grid: "a grid", griddot: "a grid with dots", dots: "dots", none: "no background" };
       let words = ` · ${BG[opt.bg]}${opt.strength === "faded" && opt.bg !== "none" ? ", faded" : ""}`;
-      if (opt.bg === "solid") {
-        if (peel < 1) words += `, peeled to ${Math.round(peel * 100)}% strength`;
-        if (opened.length) words += `, ${opened.length === 1 ? "a wedge" : "wedges"} out at ${list(opened)}`;
-      } else if (opened.length) words += `, ${opened.length === 1 ? "the page" : "the pages"} at ${list(opened)} hidden`;
+      if (peel < 1) words += `, peeled to ${Math.round(peel * 100)}% strength`;
+      if (opened.length) words += opt.bg === "solid" ? `, ${many ? "wedges" : "a wedge"} out at ${list(opened)}` : `, ${many ? "the pages" : "the page"} at ${list(opened)} hidden`;
       words += ` · ${opt.wada === "none" ? "Wada's colours hidden" : inCells ? "Wada's colours as balls in their cells" : opt.wada === "dots" ? "Wada's colours as balls at their place" : "Wada's colours in their cells"}`;
       return words + (!space ? "" : opt.space === "normalised" ? " · normalised, a cylinder" : " · real space");
     }
 
-    // A level control's peel, for the smooth solid in 3D: a vertical line across the solid's outline, at
+    // A level control's peel, for the solid in 3D: a vertical line across the solid's outline, at
     // its strength p (0 at the greys to 1 at the edge: ends(), x0 and x1), from y0 to y1, with a knob at each end, and
     // the shell's outline (shell(p): a path, or none) dashed. Dragged, or with the arrow keys while it has
     // the focus (a slider of its own, in the control's tab order), it sets the peel (set(p)). Shown with
@@ -5943,7 +5988,7 @@
       });
       g.addEventListener("wheel", (e) => e.stopPropagation());
       const title = svgEl("title");
-      title.textContent = "Peel the smooth solid by strength. Drag, or use the arrow keys";
+      title.textContent = "Peel the solid by strength. Drag, or use the arrow keys";
       g.prepend(title);
       return { place, redraw: () => place(p) };
     }
@@ -5993,6 +6038,235 @@
           label.style.setProperty("--dx", ["-100%", "-50%", "0%"][side + 1]);
           label.style.setProperty("--dy", side ? "-50%" : y < 0 ? "-100%" : "0%");
           return label;
+        },
+      };
+    }
+
+    // 3D's cake dial (the page's), above the level control: the solid seen from above, turned as it is (the
+    // side it's seen from at the bottom), each page's slice in its colours (copies of the view's dial's), the
+    // pages hidden faded; and round it, the slices shown, a spiral from one knob, where they start, clockwise
+    // and outwards to the other, where they end (so that, all of them shown, the two are at the same hour,
+    // one beyond the other, not one on the other). Dragging a knob takes slices out at its end of the spiral,
+    // or puts them back, as far as the whole solid or down to a slice (the spiral never loops), and on past
+    // them pushes the other knob along, turning the cut with it; dragging the top view turns the cut round, as the mouse wheel does; clicking a slice takes it out, or puts it back.
+    // The knobs are sliders too: the arrow keys move the one with the focus, Page Up and Page Down turn the
+    // cut. Pages hidden another way (the solid's labels) show on it, the knobs at the ends of the widest run
+    // shown (any hidden inside it faded); moving a knob hides or shows only the slices it passes.
+    // changed(): it hid or showed some. attach(solid, hues): the solid it cuts (its sectors, as the smooth
+    // solid has them, and names; hidden(), hide(pages) and watch(f), f told where it's seen from as it's
+    // drawn) and the view's dial's slices (a group per page); sync(): the pages hidden, read again;
+    // detach(solid).
+    function cakeDial(changed) {
+      const D = 1.78, R_IN = 1.22, R_OUT = 1.56, KNOB = 0.13, NEAR = 0.3; // the dial's half-width; the knobs' distances from the middle (the top view's rim at 1), their radius, and how near one a press takes it
+      const mod = (x, m) => ((x % m) + m) % m, rad = (deg) => (deg * Math.PI) / 180;
+      const svg = svgEl("svg", { class: "cake-dial", viewBox: `${-D} ${-D} ${2 * D} ${2 * D}`, role: "group", "aria-label": "The slices of the solid shown" });
+      const title = svgEl("title");
+      title.textContent = "The slices shown: drag a knob to take slices out or put them back, drag the solid round to turn the cut, or click a slice";
+      const turn = svgEl("g"), slices = svgEl("g"), rim = svgEl("circle", { class: "rim", r: 1 });
+      const cuts = [0, 1].map(() => svgEl("line", { class: "cut", x1: 0, y1: 0 })), spiral = svgEl("path", { class: "spiral" });
+      const knobs = ["from", "to"].map((end) => svgEl("circle", { class: "knob", r: KNOB, tabindex: "0", role: "slider", "aria-label": `The slices shown, ${end}` }));
+      turn.append(slices, rim, ...cuts, spiral, ...knobs);
+      svg.append(title, turn);
+      const box = Object.assign(document.createElement("div"), { className: "cake-box" });
+      box.append(svg);
+      // The solid's N pages as slots clockwise round the top view: slot c from bearing theta0 + c step (its
+      // edge on the anticlockwise side: the boundary c), seen from above with north at the top; pageOf(c),
+      // its page (and slotOf, the slot of a page: the same).
+      let solid = null, N = 0, step = 15, theta0 = 0, pageOf = (c) => c, names = [], az = 180, hues = [];
+      // The slots hidden; the knobs (the slices shown, s of them clockwise from boundary a: s 0, none; s N,
+      // all); and a drag (or a key's or the wheel's step): mode, start, end or turn, from h0, a0 and s0.
+      let hidden = new Set(), a = null, s = 0, drag = null;
+      const onPlan = (r, bearing) => [r * Math.sin(rad(bearing)), -r * Math.cos(rad(bearing))];
+      const edge = (c) => theta0 + c * step;
+      // From the solid: the knobs at the ends of the widest run of slots hidden (of runs as wide, the one the
+      // start knob is at already); none hidden, where they were (at first, at the slot nearest the eye).
+      const derive = () => {
+        hidden = new Set(solid.hidden().map(pageOf));
+        if (!hidden.size || hidden.size === N) {
+          s = hidden.size ? 0 : N;
+          a ??= mod(Math.round((az - theta0) / step), N);
+          return;
+        }
+        let most = 0, after = a;
+        for (let c = 0; c < N; c++) {
+          if (!hidden.has(c) || hidden.has(mod(c - 1, N))) continue; // (a run's first)
+          let n = 1;
+          while (hidden.has(mod(c + n, N))) n++;
+          if (n > most || (n === most && mod(c + n, N) === a)) [most, after] = [n, mod(c + n, N)];
+        }
+        a = after;
+        s = N - most;
+      };
+      const draw = () => {
+        if (!solid) return;
+        hues.forEach((g, c) => g.classList.toggle("out", hidden.has(c)));
+        const from = edge(a), span = s * step;
+        cuts.forEach((line, j) => {
+          const [x, y] = onPlan(1, from + j * span);
+          line.setAttribute("x2", x);
+          line.setAttribute("y2", y);
+          line.setAttribute("visibility", s > 0 && s < N ? "visible" : "hidden");
+        });
+        let d = "";
+        for (let j = 0, n = Math.max(2, Math.ceil(span / 3)); s && j <= n; j++) {
+          const [x, y] = onPlan(R_IN + ((R_OUT - R_IN) * j) / n, from + (span * j) / n);
+          d += `${j ? "L" : "M"} ${x.toFixed(4)} ${y.toFixed(4)} `;
+        }
+        spiral.setAttribute("d", d);
+        [onPlan(R_IN, from), onPlan(R_OUT, from + span)].forEach(([x, y], j) => {
+          knobs[j].setAttribute("cx", x);
+          knobs[j].setAttribute("cy", y);
+        });
+        const name = (c) => names[pageOf(mod(c, N))];
+        knobs[0].setAttribute("aria-valuenow", a);
+        knobs[0].setAttribute("aria-valuetext", s === N ? `The whole solid, from ${name(a)}` : s ? `From ${name(a)}` : "None shown");
+        knobs[1].setAttribute("aria-valuenow", mod(a + s, N));
+        knobs[1].setAttribute("aria-valuetext", s === N ? `The whole solid, to ${name(a - 1)}` : s ? `To ${name(a + s - 1)}` : "None shown");
+      };
+      // A step of the drag: k slots on from where it began. A knob passes slots: the end knob shows them
+      // going clockwise and hides them going back, the start knob the other way round; and on past a single
+      // slice, or the whole solid, it pushes the other knob along (the slice shown, or where the cut starts,
+      // turning with it), the drag going on from there (base: the k it was pushed at). Turning moves every
+      // slot hidden.
+      const update = (k) => {
+        const { mode, h0, a0, s0, base } = drag, h = new Set(h0);
+        k -= base;
+        if (mode === "turn") {
+          h.clear();
+          for (const c of h0) h.add(mod(c + k, N));
+          [a, s] = [mod(a0 + k, N), s0];
+        } else {
+          let from = a0, to = a0 + s0; // (the boundaries, unwrapped)
+          if (mode === "end") to += k;
+          else from += k;
+          const least = to - from < 1, most = to - from > N;
+          if (least || most) {
+            const n = least ? 1 : N;
+            if (mode === "end") from = to - n;
+            else to = from + n;
+            h.clear();
+            for (let c = to; c < from + N; c++) h.add(mod(c, N)); // (every slot but those shown)
+            Object.assign(drag, { h0: new Set(h), a0: from, s0: n, base: base + k });
+          } else if (mode === "end") {
+            for (let c = Math.min(a0 + s0, to); c < Math.max(a0 + s0, to); c++) if (to > a0 + s0) h.delete(mod(c, N)); else h.add(mod(c, N));
+          } else {
+            for (let c = Math.min(a0, from); c < Math.max(a0, from); c++) if (from > a0) h.add(mod(c, N)); else h.delete(mod(c, N));
+          }
+          [a, s] = [mod(from, N), to - from];
+        }
+        const same = h.size === hidden.size && [...h].every((c) => hidden.has(c));
+        hidden = h;
+        if (!same) {
+          solid.hide([...hidden].map(pageOf));
+          changed();
+        }
+        draw();
+      };
+      const begin = (mode) => { drag = { mode, h0: new Set(hidden), a0: a, s0: s, base: 0 }; };
+      const finish = () => {
+        drag = null;
+        derive();
+        draw();
+      };
+      // Where the pointer is, on the top view (its turn undone): x, y, r from the middle, and its bearing.
+      const planAt = (e) => {
+        const box = svg.getBoundingClientRect(), x0 = ((e.clientX - box.left) / box.width) * 2 * D - D, y0 = ((e.clientY - box.top) / box.height) * 2 * D - D;
+        const t = rad(az - 180), x = x0 * Math.cos(t) - y0 * Math.sin(t), y = x0 * Math.sin(t) + y0 * Math.cos(t);
+        return { x, y, r: Math.hypot(x, y), bearing: mod((Math.atan2(x, -y) * 180) / Math.PI, 360) };
+      };
+      // A press: on a knob (or the ring it moves on, which takes it there at once), dragging it; on the top
+      // view, dragging turns the cut, and a click takes the slice out or puts it back.
+      svg.addEventListener("pointerdown", (e) => {
+        if (!solid || e.button > 0) return;
+        e.preventDefault(); // no text selection
+        const p = planAt(e), off = (r, bearing) => { const [x, y] = onPlan(r, bearing); return Math.hypot(p.x - x, p.y - y); };
+        const toStart = off(R_IN, edge(a)), toEnd = off(R_OUT, edge(a + s)), onKnob = Math.min(toStart, toEnd) < NEAR;
+        const mode = onKnob ? (toStart <= toEnd ? "start" : "end") : p.r > 1.06 ? (p.r < (R_IN + R_OUT) / 2 ? "start" : "end") : "turn";
+        begin(mode);
+        Object.assign(drag, { acc: 0, last: p.bearing, x: e.clientX, y: e.clientY, moved: false, slot: mod(Math.floor((p.bearing - theta0) / step), N) });
+        svg.setPointerCapture(e.pointerId);
+        if (mode === "turn") return;
+        knobs[mode === "start" ? 0 : 1].focus();
+        if (onKnob) return;
+        let k = mod(Math.round((p.bearing - theta0) / step) - (mode === "start" ? a : a + s), N);
+        if (k > N / 2) k -= N;
+        drag.acc = k * step;
+        update(k);
+      });
+      svg.addEventListener("pointermove", (e) => {
+        if (drag?.last === undefined || !svg.hasPointerCapture(e.pointerId)) return; // (a press's drag)
+        if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 4) return;
+        drag.moved = true;
+        const p = planAt(e);
+        drag.acc += mod(p.bearing - drag.last + 180, 360) - 180;
+        drag.last = p.bearing;
+        update(Math.round(drag.acc / step));
+      });
+      svg.addEventListener("pointerup", () => {
+        if (drag?.last === undefined) return;
+        if (drag.mode === "turn" && !drag.moved) {
+          const c = drag.slot;
+          if (!hidden.delete(c)) hidden.add(c);
+          solid.hide([...hidden].map(pageOf));
+          changed();
+        }
+        finish();
+      });
+      svg.addEventListener("pointercancel", () => { if (drag?.last !== undefined) finish(); });
+      knobs.forEach((knob, j) => knob.addEventListener("keydown", (e) => {
+        const k = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key], t = { PageUp: 1, PageDown: -1 }[e.key];
+        if (!solid || (k === undefined && t === undefined) || e.altKey || e.ctrlKey || e.metaKey) return;
+        e.preventDefault(); // (not the level's keys: see onArrows)
+        begin(k === undefined ? "turn" : j ? "end" : "start");
+        update(k ?? t);
+        finish();
+      }));
+      let spun = 0;
+      svg.addEventListener("wheel", (e) => {
+        if (!solid) return;
+        e.preventDefault();
+        spun += e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+        const k = Math.trunc(spun / 100);
+        if (!k) return;
+        spun -= k * 100;
+        begin("turn");
+        update(k);
+        finish();
+      }, { passive: false });
+      return {
+        box,
+        attach: (made, viewHues) => {
+          solid = made;
+          const { count, start, step: per, dir } = made.sectors;
+          [N, step, theta0, names] = [count, per, 90 - start, made.names];
+          pageOf = (c) => (dir < 0 ? mod(c, N) : N - 1 - mod(c, N)); // (clockwise, the pages count up, or down)
+          hues = Array.from({ length: N }, (_, c) => {
+            const g = viewHues[pageOf(c)].cloneNode(true), tip = svgEl("title");
+            g.classList.remove("on");
+            tip.textContent = names[pageOf(c)];
+            g.append(tip);
+            return g;
+          });
+          slices.replaceChildren(...hues);
+          knobs.forEach((knob) => { knob.setAttribute("aria-valuemin", 0); knob.setAttribute("aria-valuemax", N - 1); });
+          made.watch((deg) => {
+            az = deg;
+            turn.setAttribute("transform", `rotate(${180 - deg})`);
+          });
+          drag = null;
+          derive();
+          draw();
+        },
+        sync: () => {
+          if (!solid || drag) return;
+          derive();
+          draw();
+        },
+        detach: (made) => {
+          made.watch(null);
+          if (solid !== made) return;
+          solid = null;
+          drag = null;
         },
       };
     }
@@ -6628,7 +6902,7 @@
       );
       const { slice, ghost, marker, pointer, mark: markLevel } = levelMarks(CX, (s) => s + 1, (s) => halfWidth(s + 1));
       control.append(ghost, marker, slice, axisFront, pointer);
-      // The page's, in 3D on the smooth solid: its peel, out from the axis to the equator, and the shell's
+      // The page's, in 3D: the solid's peel, out from the axis to the equator, and the shell's
       // outline, the cone at that share of its width.
       const peelControl = picker ? null : peelLine(control, {
         ends: () => [CX, CX + W], y0: 1, y1: 2 * N - 1,
@@ -6640,6 +6914,7 @@
           caption3d();
         },
       });
+      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
       // 2D (the disc) or 3D (the whole solid, made when first asked for).
       const modes = Object.assign(document.createElement("div"), { className: "view-modes" });
       // In 3D, where the cut is from: the top (the lower part stays) or the bottom. Each choice is drawn
@@ -6778,7 +7053,11 @@
       let solidLook = "", levelCaption = "";
       let peel = savedPeel(saved);
       const words3d = () => solidWords(opt, { peel, opened: solid?.opened() ?? [], inCells: ballsInCells(), space: false });
-      const caption3d = () => { if (disc.dataset.mode === "3d" && !picker) captionText.textContent = levelCaption + words3d(); };
+      const caption3d = () => {
+        if (disc.dataset.mode !== "3d" || picker) return;
+        captionText.textContent = levelCaption + words3d();
+        cake?.sync();
+      };
       const circlePoints = (R) => Array.from({ length: 180 }, (_, k) => [R * Math.cos((k * Math.PI) / 90), R * Math.sin((k * Math.PI) / 90)]);
       // What a level paints: out to its outermost cells' middles (the solid's surface passes through them),
       // ring r at r / N; the other levels, nearest first, to paint ahead.
@@ -7009,6 +7288,7 @@
       });
       dialFace.append(...dialLabels);
       control.after(dialBox);
+      if (cake) dialBox.after(cake.box);
 
       // `level` is the chosen level; `shown` the one on the disc, which differs while the pointer hovers
       // over another level of the control (a preview, until clicked).
@@ -7171,9 +7451,11 @@
           else { s.look(opt, caption3d); s.peel(peel); }
           s.side(cut, false);
           if (faceLater) { faceLater = false; s.face(page); }
+          cake?.attach(s, hues);
           caption3d();
         },
         detach: (s) => {
+          cake?.detach(s);
           if (solid === s) solid = null;
           solidFrom = s.state();
           s.unhover();
@@ -7234,7 +7516,7 @@
         modes.querySelector('[data-option="bg3"]').hidden = view !== "3d";
         if (solidLook && solidLook !== String(ballsInCells())) remake3d();
         solid?.look(opt, caption3d);
-        if (view === "3d" && opt.bg === "solid") { control.dataset.peel = ""; peelControl.place(peel); }
+        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
         else delete control.dataset.peel;
       };
       function loadLook() {
@@ -7732,7 +8014,7 @@
       };
       const { slice, ghost, marker, pointer, mark: markLevel } = levelMarks(CX, rowY, halfWidth);
       control.append(svgEl("rect", { class: "strip", x: 0, y: 0, width: 1.8, height: 32 }), outline, ghost, marker, slice, pointer);
-      // The page's, in 3D on the smooth solid: its peel, out from the greys to the outline's widest, and the
+      // The page's, in 3D: the solid's peel, out from the greys to the outline's widest, and the
       // shell's outline (each level's width, its share of the way out from the greys).
       const peelControl = picker ? null : peelLine(control, {
         ends: () => { halfWidth(0); return [CX + W * INNER, CX + Math.max(...widths)]; },
@@ -7749,6 +8031,7 @@
           caption3d();
         },
       });
+      const cake = picker ? null : cakeDial(() => caption3d()); // 3D's cake dial, above the control (see cakeDial)
 
       // The switches: the view (Flat, 2D or 3D, made when first asked for) and the range; then, as in the
       // other views, the slicing (2D), the space, the background, its strength, Wada's colours (see
@@ -7998,6 +8281,7 @@
       });
       dialFace.append(...dialLabels);
       control.after(dialBox);
+      if (cake) dialBox.after(cake.box);
 
       // The tones (PCCS's, 2D): each chromatic tone a ring of the 24 hues round its code, as the disc has
       // them (2:R on the right, 8:Y at the top), placed as the institute's tone diagram has them: across by
@@ -8330,7 +8614,11 @@
       // In 3D: what the solid shows (solidWords), after the level's caption; and that again as it's peeled or opened.
       let levelCaption = "", peel = savedPeel(saved);
       const words3d = () => solidWords(opt, { peel, opened: solid?.opened() ?? [], inCells: ballsInCells() });
-      const caption3d = () => { if (disc.dataset.mode === "3d" && !picker) captionText.textContent = levelCaption + words3d(); };
+      const caption3d = () => {
+        if (disc.dataset.mode !== "3d" || picker) return;
+        captionText.textContent = levelCaption + words3d();
+        cake?.sync();
+      };
       // 3D: Wada's balls in their cells (dots on a grid in normalised space), else at their place.
       const ballsInCells = () => opt.wada === "dots" && opt.space === "normalised" && CELL_BGS.includes(opt.bg); // (on the grid in the smooth solid: blocks, as on the walls)
       // Wada's colours on the disc and pages (wadaMarks): a dot (in its cell, or at its place), or a piece of its cell.
@@ -8632,9 +8920,11 @@
           if (picker) s.empty(EMPTY_OF[opt.bg]);
           else { s.look(opt); s.peel(peel); }
           s.side(cut, false);
+          if (cake) { dialHues(); cake.attach(s, hues); }
           caption3d();
         },
         detach: (s) => {
+          cake?.detach(s);
           if (solid === s) solid = null;
           solidFrom = s.state();
           s.unhover();
@@ -8734,7 +9024,7 @@
         for (const b of [...spaceOption.querySelectorAll("button"), smoothChoice]) b.disabled = tones;
         option("bg").hidden = view === "3d";
         option("bg3").hidden = view !== "3d";
-        if (view === "3d" && opt.bg === "solid") { control.dataset.peel = ""; peelControl.place(peel); }
+        if (view === "3d" && peelControl) { control.dataset.peel = ""; peelControl.place(peel); }
         else delete control.dataset.peel;
       };
       const loadLook = () => {
@@ -9001,6 +9291,16 @@
     function solidShown() {
       return "solidOn(other)";
     }
+    // Peeled (u_peel, the peel in hundredths, as its control sets it: 0 to 100, of the way out from the greys
+    // to the edge; 100 on the smooth solid, which peels itself): a piece shows if its share of the way out,
+    // its cell's middle's (a_peel.x), is within it; one that's a wall where the cell beyond is further out
+    // shows only if that one is peeled away (a_peel.y, the share beyond; NO_PEEL if none). Each share in
+    // hundredths, rounded up (peelOf), so that a byte holds it, exactly as far as the peel goes. (In both
+    // solids' vertex shaders.)
+    function solidPeel() {
+      return "(a_peel.x <= u_peel + 0.5 && a_peel.y > u_peel + 0.5)";
+    }
+    const peelOf = (share) => Math.ceil(share * 100 - 1e-9), NO_PEEL = 255;
     // The page's 3D switches as the shaders have them (see solidOnFn): the background, Wada's colours, faded.
     const SOLID = 5, SMOOTH_ID = 16777214; // the smooth solid's background, and its id when picking
     const solidLook = (opt) => ({ bg: ["none", "dots", "griddot", "walls", "grid", "solid"].indexOf(opt.bg), wada: ["none", "grid", "dots"].indexOf(opt.wada), faded: opt.strength === "faded" });
@@ -9012,7 +9312,7 @@
     // background is and they aren't on the grid. A background piece (an empty cell, its lines and dot, or
     // such a piece) faded towards the page by u_fade. (Before main, in both solids' vertex shaders.)
     function solidOnFn() {
-      return `uniform int u_bg, u_wada; uniform float u_fade; uniform vec3 u_bgc;
+      return `uniform int u_bg, u_wada; uniform float u_fade, u_peel; uniform vec3 u_bgc;
         bool solidOn(float other) {
           if (abs(other - 6.0) < 0.5) return true;
           if (abs(other - 7.0) < 0.5) return u_bg == 5 && u_wada == 1; // BLOCK: Wada's colours on the grid in the smooth solid, blocks in their cells
@@ -9067,7 +9367,7 @@
     // camera); turned(), as it turns. Returns request() (a frame), and its controls.
     function solidCore({ canvas, gl, wide, program, meshes, dotsAt, targets, lone, spots, view, cutLevel, heightOf, setOff, outline, placeLabels, turned = () => {},
       smoothOf = null, fit = null, onColour, onCell, onLeave, onOpen, onOpenCell, onPoint = () => {}, onOpenPoint = () => {}, onRestored }) {
-      const u = Object.fromEntries(["u_mvp", "u_cut", "u_from", "u_px", "u_dpr", "u_empty", "u_off", "u_card", "u_cardSide", "u_cutY", "u_mode", "u_round", "u_hi", "u_line", "u_bg", "u_wada", "u_fade", "u_bgc"].map((n) => [n, gl.getUniformLocation(program, n)]));
+      const u = Object.fromEntries(["u_mvp", "u_cut", "u_from", "u_px", "u_dpr", "u_empty", "u_off", "u_card", "u_cardSide", "u_cutY", "u_mode", "u_round", "u_hi", "u_line", "u_bg", "u_wada", "u_fade", "u_peel", "u_bgc"].map((n) => [n, gl.getUniformLocation(program, n)]));
       // The lone dots' order, from the back, kept for the camera it was sorted for.
       const order = { idx: Uint16Array.from({ length: meshes.points.count }, (_, i) => i), d: new Float32Array(meshes.points.count), key: "" };
       gl.bindVertexArray(meshes.points.vao);
@@ -9148,6 +9448,7 @@
       gl.bufferData(gl.PIXEL_PACK_BUFFER, 8, gl.STREAM_READ);
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
       let pending = null; // a pixel being read: { sync, both }
+      let watcher = null; // told where it's seen from as it's drawn (see watch)
       const draw = (px = -1, py = -1, smoothPick = false, later = false) => {
         if (lost) return -1;
         resize();
@@ -9169,6 +9470,7 @@
         gl.uniform1i(u.u_bg, look ? look.bg : -1);
         gl.uniform1i(u.u_wada, look ? look.wada : 0);
         gl.uniform1f(u.u_fade, look?.faded ? 0.65 : 0); // as the 2D views' background at 0.35 of its strength
+        gl.uniform1f(u.u_peel, Math.round(100 * (look && look.bg !== SOLID ? view.peel ?? 1 : 1))); // (the smooth solid peels itself; Wada's colours on it stay, as in its wedges)
         gl.uniform3fv(u.u_bgc, BG);
         setOff(u.u_off, look?.bg === SOLID); // (none hidden on the smooth solid, whose wedges the labels open: the balls there stay)
         gl.uniform1f(u.u_px, H / 2 / Math.tan((HALF * Math.PI) / 180));
@@ -9247,6 +9549,7 @@
             } else outline(view.hovered);
           }
           placeLabels(cam);
+          watcher?.(view.az);
         }
         gl.bindVertexArray(null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -9376,13 +9679,15 @@
         },
         empty: (how) => { view.emptyAs = ["hidden", "points", "dots", "filled", "all"].indexOf(how); request(); }, // how the cells show
         // The page's switches, opt (the background, its strength and Wada's colours), for the shaders; and
-        // the smooth solid's peel (0 to 1: the shell's strength, a share of the way out to the edge).
+        // the peel (0 to 1, a share of the way out to the edge: the smooth solid's shell's strength; on the
+        // others, the cells whose middles are within it shown, see solidPeel).
         look: (opt) => {
           view.look = solidLook(opt);
           canvas.setAttribute("aria-label", opt.bg === "solid" ? `${wallsLabel.split(" in 3D")[0]} in 3D, the smooth solid, whole and in continuous colour, cut at the level chosen, peeled by strength and opened by its hues' buttons. Drag, or use the arrow keys, to turn it.` : wallsLabel);
           request();
         },
         peel: (p) => { view.peel = p; request(); },
+        watch: (f) => { watcher = f; f?.(view.az); }, // f(az) as it's drawn (the cake dial, turned with it); null: no more
         unhover: () => { onPlace = false; if (view.hovered >= 0) { view.hovered = -1; request(); } },
         lost: () => lost,
         dispose: () => { disposed = true; smoothJob?.cancel(); if (!lost) gl.getExtension("WEBGL_lose_context")?.loseContext(); }, // its GPU memory, at once
@@ -9676,6 +9981,7 @@
       const rad = (deg) => (deg * Math.PI) / 180;
       const at = (rho, deg, y) => [rho * Math.sin(rad(deg)), y, -rho * Math.cos(rad(deg))];
       const exists = (s, r) => s >= 0 && s <= TOP && r >= 0 && r <= Math.min(s, TOP - s);
+      const shareAt = (s, r) => (Math.min(s, TOP - s) > 0 ? Math.min(1, r / Math.min(s, TOP - s)) : 0); // ring r's share of the way out at level s (unrounded: a ball's place)
       // What a piece of geometry is: BODY, always (clipped above the cut); CAP, the cut face, only at the
       // cut level; DOT, an empty cell's dot on a page's face, hidden at the cut level (the cap has one).
       const BODY = 0, CAP = 1, DOT = 2;
@@ -9688,10 +9994,11 @@
       // in its middle, only when they're only dots or every cell is a dot; WADA, a dot of Wada's colour,
       // only when every cell is a dot), and the id of what it belongs to. A lone dot has its radius too.
       // Wada's colours themselves (ALWAYS) are hidden when every cell is a dot.
+      // And how far out it is, for peeling (see solidPeel): its share of the way out, and what's beyond it.
       const ALWAYS = 0, EMPTY = 1, ALONE = 2, DOTS = 3, POINTS = 4, WADA = 5, HI = 6, BLOCK = 7, BLOCK_SHARE = 0.94; // BLOCK: see solidOnFn
-      let only = ALWAYS, page = 24, UNDER = 0; // page: the hue sector of what's being made (24: the pole); UNDER: 8 while a cell's own piece under Wada's colours is made (see solidOnFn)
-      const FIELDS = [["pos", 3], ["col", 4], ["info", 4], ["id", 1], ["page", 1], ["size", 1]];
-      const TYPES = { pos: Float32Array, col: Float32Array, info: Uint8Array, id: Float32Array, page: Uint8Array, size: Float32Array };
+      let only = ALWAYS, page = 24, UNDER = 0, share = 0, beyond = NO_PEEL; // page: the hue sector of what's being made (24: the pole); UNDER: 8 while a cell's own piece under Wada's colours is made (see solidOnFn)
+      const FIELDS = [["pos", 3], ["col", 4], ["info", 4], ["id", 1], ["page", 1], ["size", 1], ["peel", 2]];
+      const TYPES = { pos: Float32Array, col: Float32Array, info: Uint8Array, id: Float32Array, page: Uint8Array, size: Float32Array, peel: Uint8Array };
       const mesh = (types = TYPES) => ({ n: 0, room: 0, types });
       const faces = mesh(), lines = mesh(), outline = mesh(), points = mesh({ ...TYPES, pos: Float64Array }); // outline: every piece's edges, for the highlight; points: the lone dots (their places kept exactly, to sort them by)
       const lone = new Map(), spots = new Map(); // an empty cell's id -> its lone dot; one of Wada's colours' -> its dot
@@ -9711,6 +10018,7 @@
         m.id[n] = id;
         m.page[n] = page;
         m.size[n] = size;
+        m.peel[2 * n] = share; m.peel[2 * n + 1] = beyond;
       };
       // A lone dot's radius, rho from the axis: smaller near the pole, where the cells crowd.
       const pointSize = (rho) => (rho < 1e-4 ? 0.011 : Math.min(0.011, 0.0785 * rho));
@@ -9746,6 +10054,7 @@
       const pagePiece = (sector, s, r, k, m, id, rgb, own) => {
         only = rgb ? ALWAYS : EMPTY + UNDER;
         page = sector;
+        share = peelOf(shareAt(s, r));
         const y = yOf(s), w = 15 * PAGE, d0 = sector * 15 - w / 2 + (k * w) / m, d1 = d0 + w / m;
         const D = [[(r - 1) * UR, y], [r * UR, y + UY], [(r + 1) * UR, y], [r * UR, y - UY]];
         const A = D.map(([p, yy]) => at(p, d0, yy)), B = D.map(([p, yy]) => at(p, d1, yy));
@@ -9756,17 +10065,9 @@
           if (P) quad(faces, P[0], P[1], P[2], P[3], col, 1, s, BODY, card, id);
         }
         const across = [[s - 1, r - 1], [s - 1, r + 1], [s + 1, r + 1], [s + 1, r - 1]]; // the cell beyond each edge
-        for (let i = 0; i < 4; i++) {
-          const P = [A[i], A[(i + 1) % 4], B[(i + 1) % 4], B[i]];
-          if (exists(...across[i])) {
-            // Wada's colour next to an empty cell: a wall, for when the empty cells are hidden (or only dots).
-            if (rgb && empty(sector, ...across[i])) quad(faces, P[0], P[1], P[2], P[3], col, SIDE, s, BODY, card, id, ALONE);
-            continue;
-          }
-          quad(faces, P[0], P[1], P[2], P[3], col, SIDE, s, BODY, card, id);
-          if (rgb) continue;
-          // An empty cell's dot on this edge too, in its middle, just off it: the solid's outer surface
-          // shows its colours. (BODY: clipped above the cut like the edge.)
+        // An empty cell's dot on an edge too, in its middle, just off it: the solid's outer surface (or what
+        // peeling leaves of it) shows its colours. (BODY: clipped above the cut like the edge.)
+        const edgeDot = (P) => {
           const sub = (p, q) => p.map((v, j) => v - q[j]), len = (v) => Math.hypot(...v), unit = (v) => v.map((x) => x / len(v));
           const mid = [0, 1, 2].map((j) => (P[0][j] + P[1][j] + P[2][j] + P[3][j]) / 4);
           const u = unit(sub(P[1], P[0])), w = sub(P[3], P[0]), k0 = w[0] * u[0] + w[1] * u[1] + w[2] * u[2];
@@ -9776,6 +10077,21 @@
           if (n[0] * inside[0] + n[1] * inside[1] + n[2] * inside[2] < 0) n = n.map((x) => -x);
           const thick = (len(sub(P[3], P[0])) + len(sub(P[2], P[1]))) / 2;
           dot(mid.map((x, j) => x + 0.0006 * n[j]), u, v, Math.min(0.011, 0.3 * len(sub(P[1], P[0])), 0.3 * thick), ownCol, s, BODY, id);
+        };
+        for (let i = 0; i < 4; i++) {
+          const P = [A[i], A[(i + 1) % 4], B[(i + 1) % 4], B[i]];
+          if (exists(...across[i])) {
+            // Wada's colour next to an empty cell: a wall, for when the empty cells are hidden (or only dots).
+            if (rgb && empty(sector, ...across[i])) quad(faces, P[0], P[1], P[2], P[3], col, SIDE, s, BODY, card, id, ALONE);
+            // The cell beyond further out: a wall, for when peeling takes it away (and this one stays).
+            // (Without an empty cell's dot: as thin as the page there, it would hardly show.)
+            beyond = peelOf(shareAt(...across[i]));
+            if (beyond > share) quad(faces, P[0], P[1], P[2], P[3], col, SIDE, s, BODY, card, id);
+            beyond = NO_PEEL;
+            continue;
+          }
+          quad(faces, P[0], P[1], P[2], P[3], col, SIDE, s, BODY, card, id);
+          if (!rgb) edgeDot(P);
         }
         quad(faces, C[0], C[1], C[2], C[3], col, 1, s, CAP, card, id);
         if (rgb) { // the same as a block, its sector's whole width (but a hair), for the smooth solid (BLOCK: see solidOnFn)
@@ -9810,6 +10126,7 @@
       const polePiece = (s, k, m, id, rgb, own) => {
         only = rgb ? ALWAYS : EMPTY + UNDER;
         page = 24;
+        share = 0;
         const y = yOf(s), d0 = (k * 360) / m, d1 = ((k + 1) * 360) / m, n = Math.max(6, Math.round(48 / m));
         const ownCol = own && wide.screen(own.rgb), card = rgb ? 0 : 1, col = rgb ?? ownCol; // card carries its own colour, for when the empty cells are filled
         const profile = rgb ? [[0, y + UY], [UR, y], [0, y - UY]] : [[0, y + UY], [0.7 * UR, y + 0.3 * UY], [UR, y], [0.7 * UR, y - 0.3 * UY], [0, y - UY]];
@@ -9874,6 +10191,7 @@
               else pagePiece(sector, s, r, k, pieces.length, id, rgb, t.cell);
               if (dots) {
                 spots.set(id, points.n);
+                if (exact) { const p = placeOf(t.colour); share = peelOf(shareAt(p.level, p.ring)); } // (else its cell's)
                 put(points, dots.at[k], rgb, 1, s, BODY, 0, id, WADA, dots.size);
               }
               end(id);
@@ -9886,7 +10204,7 @@
       // The program: hides what's above the cut (whole levels in the vertex shader, the cut level's upper
       // half in the fragment shader), and draws colours, card, lines, or ids for picking.
       const program = glProgram(gl, `#version 300 es
-        in vec3 a_pos; in vec4 a_col; in vec4 a_info; in float a_id, a_page, a_size;
+        in vec3 a_pos; in vec4 a_col; in vec4 a_info; in float a_id, a_page, a_size; in vec2 a_peel;
         uniform mat4 u_mvp; uniform float u_cut, u_cutY, u_from, u_px, u_dpr; uniform int u_empty, u_off, u_mode; uniform bool u_hi; uniform vec3 u_card, u_cardSide; // u_hi: the hovered lone dot, bigger and ringed; // u_from: 1 cut from the top, -1 from the bottom; u_empty: 0 hidden, 1 only dots, 2 dots on card, 3 filled, 4 every cell a dot; u_off: the hidden pages, a bit each; u_px: pixels per unit at distance 1
         out vec3 v_col; out float v_y; flat out float v_clip, v_id, v_size, v_sprite;
         ${solidOnFn()}
@@ -9894,7 +10212,7 @@
           float level = a_info.x, kind = a_info.y, other = a_info.w;
           bool atCut = abs(level - u_cut) < 0.5;
           bool shown = (level - u_cut) * u_from > -0.5 && (kind != 1.0 || atCut) && (kind != 2.0 || !atCut)
-            && ${solidShown()}
+            && ${solidShown()} && ${solidPeel()}
             && (a_page > 23.5 || ((u_off >> int(a_page + 0.5)) & 1) == 0);
           vec3 p = a_pos;
           if (kind == 1.0 && other == 3.0) p.y -= (1.0 - u_from) * 0.0006; // a dot on the cut: just off it, on the side it faces
@@ -9922,7 +10240,7 @@
         const vao = gl.createVertexArray();
         gl.bindVertexArray(vao);
         for (const [name, field, size, type, normalized] of [["a_pos", "pos", 3, gl.FLOAT, false], ["a_col", "col", 4, gl.FLOAT, false], ["a_info", "info", 4, gl.UNSIGNED_BYTE, false],
-          ["a_id", "id", 1, gl.FLOAT, false], ["a_page", "page", 1, gl.UNSIGNED_BYTE, false], ["a_size", "size", 1, gl.FLOAT, false]]) {
+          ["a_id", "id", 1, gl.FLOAT, false], ["a_page", "page", 1, gl.UNSIGNED_BYTE, false], ["a_size", "size", 1, gl.FLOAT, false], ["a_peel", "peel", 2, gl.UNSIGNED_BYTE, false]]) {
           const loc = gl.getAttribLocation(program, name);
           const list = m[field]?.subarray(0, m.n * size) ?? new TYPES[field](0), data = list instanceof TYPES[field] ? list : new TYPES[field](list);
           gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -10038,7 +10356,16 @@
       return {
         canvas, labels, ...shared,
         look: (opt, opened) => { shared.look(opt); wedges = opt.bg === "solid"; onOpened = opened; marks.forEach((mark) => mark()); },
-        opened: () => Array.from({ length: 24 }, (_, s) => s).filter((s) => (off >> s) & 1).map((s) => sectorName(s) || pageName(s)),
+        opened: () => pageRuns(Array.from({ length: 24 }, (_, s) => s).filter((s) => (off >> s) & 1), 24, (s) => sectorName(s) || pageName(s)),
+        // Its pages as the cake dial has them (see cakeDial): round it as the smooth solid's sectors, their
+        // names; those hidden (the smooth solid's wedges out), and hiding exactly those listed.
+        sectors: { count: 24, start: 97.5, step: 15, dir: -1 }, names: Array.from({ length: 24 }, (_, s) => pageName(s)),
+        hidden: () => Array.from({ length: 24 }, (_, s) => s).filter((s) => (off >> s) & 1),
+        hide: (list) => {
+          off = list.reduce((bits, s) => bits | (1 << s), 0);
+          marks.forEach((mark) => mark());
+          request();
+        },
         face: (k) => { view.az = (k * 15 + 90) % 360; facing(); request(); }, // turns to have sector k on the right
         state: () => ({ az: view.az, el: view.el, off }),
         restore: (st) => { // seen from where another was (its state()), its pages hidden
@@ -10144,11 +10471,11 @@
       // colour, which it carries), when it shows, the id of what it belongs to, its page, and `extra`: a
       // lone dot's radius, or the dot an empty cell's card has (its middle, and its radius: negative on a
       // wall's face, as that dot is hidden at the cut level, where the cut face has one).
-      const FIELDS = [["pos", Float32Array, 3], ["col", Float32Array, 4], ["info", Uint8Array, 4], ["id", Float32Array, 1], ["page", Uint8Array, 1], ["extra", Float32Array, 4]];
+      const FIELDS = [["pos", Float32Array, 3], ["col", Float32Array, 4], ["info", Uint8Array, 4], ["id", Float32Array, 1], ["page", Uint8Array, 1], ["extra", Float32Array, 4], ["peel", Uint8Array, 2]];
       const mesh = () => ({ n: 0, size: 0, ni: 0, idx: new Uint32Array(1 << 16) }); // and the triangles' or lines' vertices, by index
       const faces = mesh(), lines = mesh(), points = mesh();
       const NONE = [0, 0, 0, 0], BLACK = [0, 0, 0];
-      let only = ALWAYS, page = POLE;
+      let only = ALWAYS, page = POLE, share = 0, beyond = NO_PEEL; // share, beyond: how far out it is, for peeling (see solidPeel)
       const put = (m, p, rgb, shade, level, kind, card, id, other = only, extra = NONE) => {
         if (m.n === m.size) {
           m.size = Math.max(1 << 16, 2 * m.size);
@@ -10165,6 +10492,7 @@
         m.id[n] = id;
         m.page[n] = page;
         m.extra[j] = extra[0]; m.extra[j + 1] = extra[1]; m.extra[j + 2] = extra[2]; m.extra[j + 3] = extra[3];
+        m.peel[2 * n] = share; m.peel[2 * n + 1] = beyond;
         return n;
       };
       const room3 = (m, k) => { // room for k more indices
@@ -10234,6 +10562,7 @@
       const wallPiece = (pg, i, b, n, k, m, t, rgb, own) => {
         only = rgb ? ALWAYS : EMPTY + UNDER;
         page = pg.s;
+        share = peelOf((b + 0.5) / n);
         const card = rgb ? 0 : 1, col = rgb ?? own.col, id = targets.length - 1;
         const { lights, last, onA, onB, ys, A0, A1, B0, B1, eL, cut, yL, C, ringA, ringB } = wallShape(pg, i, b, n, k, m);
         // Its faces, with an empty cell's dot in the middle.
@@ -10245,38 +10574,47 @@
           strip(faces, F0, F1, col, 1, i, BODY, card, id, only, dot);
         }
         // Its edges: below, above, inside and outside, each on both faces; beyond each, the cells there (null:
-        // none, the edge is the wall's), each whether it's empty. Below and above, the next level's rings
-        // that meet it.
+        // none, the edge is the wall's), each whether it's empty and its share of the way out. Below and
+        // above, the next level's rings that meet it.
         const [q0, q1] = rowOf(i);
         const meeting = (j, whole) => { // (whole: the cell's edge there is the level's, not a point)
           const there = pg.levels[j];
           if (!whole || !there) return null;
           const got = [];
-          for (let c = 0; c < there.n; c++) if (meets ? meets(b, n, c, there.n) : c / there.n < (b + 1) / n - 1e-9 && (c + 1) / there.n > b / n + 1e-9) got.push(empty(pg.s, j, c));
+          for (let c = 0; c < there.n; c++) if (meets ? meets(b, n, c, there.n) : c / there.n < (b + 1) / n - 1e-9 && (c + 1) / there.n > b / n + 1e-9) got.push([empty(pg.s, j, c), peelOf((c + 0.5) / there.n)]);
           return got.length ? got : null; // none (Munsell's next level can have fewer rings): the edge is the wall's
         };
         const sides = [
           [[A0[0], A1[0]], [B0[0], B1[0]], meeting(i + 1, lights[0] <= q0 + 1e-9)],
           [[A0[last], A1[last]], [B0[last], B1[last]], meeting(i - 1, lights[last] >= q1 - 1e-9)],
-          [A0, B0, b > 0 ? [empty(pg.s, i, b - 1)] : null],
-          [A1, B1, b < n - 1 ? [empty(pg.s, i, b + 1)] : null],
+          [A0, B0, b > 0 ? [[empty(pg.s, i, b - 1), peelOf((b - 0.5) / n)]] : null],
+          [A1, B1, b < n - 1 ? [[empty(pg.s, i, b + 1), peelOf((b + 1.5) / n)]] : null],
         ];
         for (const [SA, SB, across] of sides) {
           const steps = SA.slice(1).map((p, j) => dist(SA[j], p)), length = steps.reduce((x, y) => x + y, 0);
           if (length < 1e-6) continue; // where the cell ends in a point
-          // Wada's colour next to an empty cell: a wall, for when the empty cells are hidden (or only dots).
-          const other = across ? (rgb && across.some(Boolean) ? ALONE : null) : only;
-          if (other === null) continue;
-          // An empty cell's dot on its edge too, in its middle: the solid's outer surface shows its colours.
+          // Wada's colour next to an empty cell: a wall, for when the empty cells are hidden (or only dots);
+          // and any cell, where one beyond is further out: a wall, for when peeling takes that away (and
+          // this one stays).
+          const other = across ? (rgb && across.some(([e]) => e) ? ALONE : null) : only;
+          const far = across ? Math.max(...across.map(([, q]) => q)) : NO_PEEL;
+          if (other === null && far <= share) continue;
+          // An empty cell's dot on its edge too, in its middle: the solid's outer surface (or what peeling
+          // leaves of it) shows its colours.
           let dot = NONE;
-          if (!rgb && !across) {
+          if (!rgb) {
             let half = length / 2, j = 0;
             while (j + 1 < steps.length && half > steps[j]) half -= steps[j++];
             const f = steps[j] ? Math.min(1, half / steps[j]) : 0, along = (S) => S[j].map((v, c) => v + (S[j + 1][c] - v) * f);
             const a = along(SA), z = along(SB);
             dot = [...mid(a, z), Math.min(0.011, 0.3 * length, 0.3 * dist(a, z))];
           }
-          strip(faces, SA, SB, col, SIDE, i, BODY, card, id, other, dot);
+          if (other !== null) strip(faces, SA, SB, col, SIDE, i, BODY, card, id, other, across ? NONE : dot);
+          if (across && far > share) {
+            beyond = far;
+            strip(faces, SA, SB, col, SIDE, i, BODY, card, id, only, dot);
+            beyond = NO_PEEL;
+          }
         }
         // Its cut face.
         if (cut) {
@@ -10310,6 +10648,7 @@
       const polePiece = (i, k, m, t, rgb, own) => {
         only = rgb ? ALWAYS : EMPTY + UNDER;
         page = POLE;
+        share = 0;
         const [q0, q1] = rowOf(i), qm = (q0 + q1) / 2, band = [qm - 0.15 * (q1 - q0), qm + 0.15 * (q1 - q0)];
         const qs = [...new Set([...steps(q0, q1, PER), ...band])].sort((p, q) => p - q);
         const d0 = (k * 360) / m, d1 = ((k + 1) * 360) / m, segments = Math.max(6, Math.round(48 / m));
@@ -10374,6 +10713,10 @@
       const greyOwn = (i) => (greyOf ? { oklch: greyOf(i), col: wide.screen(linearOf(greyOf(i))) } : { oklch: [lightOf(i), 0, 0], col: wide.screen(oklabToLinearSRGB(lightOf(i), 0, 0)) });
       // A ball at a colour's own place (in normalised space, where that falls: its share of the way out to
       // the edge, of the way to the rim).
+      const placeShare = (c) => { // its place's share of the way out from the greys to the edge
+        const [r, h, q] = walls.placeOf(c), e = walls.edgeOf(h, q);
+        return r <= inner ? 0 : Math.min(1, (r - inner) / Math.max(1e-6, e - inner));
+      };
       const placed = (c) => {
         const [r, h, q] = walls.placeOf(c), e = walls.edgeOf(h, q);
         return at(norm && r > inner ? inner + ((Math.min(r, e) - inner) / Math.max(1e-6, e - inner)) * (1 - inner) : r, h, yOf(q));
@@ -10397,6 +10740,7 @@
           else polePiece(i, k, pieces.length, t, rgb, made);
           if (dots) {
             page = pg ? pg.s : POLE;
+            if (exact && t.colour) share = peelOf(placeShare(t.colour)); // (else its cell's)
             spots.set(targets.length - 1, points.n);
             put(points, dots.at[k], rgb, 1, i, BODY, 0, targets.length - 1, WADA, [dots.size, 0, 0, 0]);
           }
@@ -10421,7 +10765,7 @@
       // half in the fragment shader) and the pages hidden, and draws colours (with an empty cell's dot on
       // its card), card, lines, or ids for picking.
       const program = glProgram(gl, `#version 300 es
-        in vec3 a_pos; in vec4 a_col; in vec4 a_info; in float a_id, a_page; in vec4 a_extra;
+        in vec3 a_pos; in vec4 a_col; in vec4 a_info; in float a_id, a_page; in vec4 a_extra; in vec2 a_peel;
         uniform mat4 u_mvp; uniform float u_cut, u_cutY, u_from, u_px, u_dpr; uniform int u_empty, u_mode; uniform ivec2 u_off; uniform bool u_hi; uniform vec3 u_card, u_cardSide; // u_from: 1 cut from the top, -1 from the bottom; u_empty: 0 hidden, 1 only dots, 2 dots on card, 3 filled, 4 every cell a dot; u_off: the pages hidden, a bit each (0-31, 32-35); u_hi: the hovered lone dot, bigger and ringed; u_px: pixels per unit at distance 1
         out vec3 v_col, v_own, v_pos; flat out vec3 v_dot; flat out float v_clip, v_id, v_size, v_sprite, v_dotR;
         ${solidOnFn()}
@@ -10431,7 +10775,7 @@
           int page = int(a_page + 0.5);
           bool off = page < 32 ? ((u_off.x >> page) & 1) == 1 : page < 64 && ((u_off.y >> (page - 32)) & 1) == 1;
           bool shown = (level - u_cut) * u_from > -0.5 && (kind != 1.0 || atCut) && !off
-            && ${solidShown()};
+            && ${solidShown()} && ${solidPeel()};
           bool onFace = other == 5.0 && atCut && u_bg >= 0; // a ball of the cut level (the page's views): on its face, whole
           vec3 p = onFace ? vec3(a_pos.x, u_cutY + u_from * a_extra.x, a_pos.z) : a_pos;
           gl_Position = shown ? u_mvp * vec4(p, 1.0) : vec4(2.0, 2.0, 2.0, 1.0);
@@ -10461,7 +10805,7 @@
           colour = vec4(c, 1.0);
         }`);
       const ATTRIBUTES = [["a_pos", "pos", 3, gl.FLOAT, false], ["a_col", "col", 4, gl.FLOAT, false], ["a_info", "info", 4, gl.UNSIGNED_BYTE, false],
-        ["a_id", "id", 1, gl.FLOAT, false], ["a_page", "page", 1, gl.UNSIGNED_BYTE, false], ["a_extra", "extra", 4, gl.FLOAT, false]];
+        ["a_id", "id", 1, gl.FLOAT, false], ["a_page", "page", 1, gl.UNSIGNED_BYTE, false], ["a_extra", "extra", 4, gl.FLOAT, false], ["a_peel", "peel", 2, gl.UNSIGNED_BYTE, false]];
       const loc = Object.fromEntries(ATTRIBUTES.map(([name]) => [name, gl.getAttribLocation(program, name)]));
       const upload = (m) => {
         const vao = gl.createVertexArray();
@@ -10514,8 +10858,12 @@
       // (On the smooth solid, each opens or closes its sector's wedge instead.)
       let wedges = false;
       const marks = [];
+      const whatOf = (s) => { // (PCCS names its hues by their numbers: once)
+        const name = NAMED.find(([h]) => Math.floor(h / SLICE) === s)?.[1];
+        return !name ? `Hue ${pageName(s)}` : name === pageName(s) ? name : `${name}, ${pageName(s)}`;
+      };
       const labels = pages.map(({ s }) => {
-        const name = NAMED.find(([h]) => Math.floor(h / SLICE) === s)?.[1], what = name ? `${name}, ${pageName(s)}` : `Hue ${pageName(s)}`;
+        const name = NAMED.find(([h]) => Math.floor(h / SLICE) === s)?.[1], what = whatOf(s);
         const b = Object.assign(document.createElement("button"), { type: "button", className: `solid-label${name ? "" : " solid-dot"}` });
         if (name) b.textContent = name;
         else b.style.setProperty("--hue", vivid(s).css);
@@ -10590,6 +10938,7 @@
           gl.vertexAttrib1f(loc.a_page, POLE);
           gl.vertexAttrib4f(loc.a_extra, 0, 0, 0, 0);
           gl.vertexAttrib4f(loc.a_col, 0, 0, 0, 1);
+          gl.vertexAttrib2f(loc.a_peel, 0, NO_PEEL); // (what's hovered is shown)
           for (const [kind, first, count] of [[BODY, 0, body.length / 3], [CAP, body.length / 3, cap.length / 3]]) {
             gl.vertexAttrib4f(loc.a_info, t.level, kind, 0, 6); // (HI: shown whatever the switches say)
             if (count) gl.drawArrays(gl.LINES, first, count);
@@ -10618,7 +10967,16 @@
           request();
         },
         look: (opt) => { shared.look(opt); wedges = opt.bg === "solid"; marks.forEach((mark) => mark()); },
-        opened: () => pages.filter(({ s }) => off.has(s)).map(({ s }) => NAMED.find(([h]) => Math.floor(h / SLICE) === s)?.[1] ?? `hue ${pageName(s)}`),
+        opened: () => pageRuns(pages.filter(({ s }) => off.has(s)).map(({ s }) => s), PAGES, (s) => NAMED.find(([h]) => Math.floor(h / SLICE) === s)?.[1] ?? `hue ${pageName(s)}`),
+        // Its pages as the cake dial has them (see cakeDial), as Ostwald's solid's.
+        sectors: { count: PAGES, start: midHue(0) - SLICE / 2, step: SLICE, dir: 1 }, names: pages.map(({ s }) => whatOf(s)),
+        hidden: () => [...off],
+        hide: (list) => {
+          off.clear();
+          for (const s of list) off.add(s);
+          marks.forEach((mark) => mark());
+          request();
+        },
       };
     }
 
