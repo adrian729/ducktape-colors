@@ -1,4 +1,4 @@
-colors.json and combinations.json started from the dataset of mattdesl/dictionary-of-colour-combinations
+colors.json started from the dataset of mattdesl/dictionary-of-colour-combinations
 (https://github.com/mattdesl/dictionary-of-colour-combinations), under this licence:
 
 The MIT License (MIT)
