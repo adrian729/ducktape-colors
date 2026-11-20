@@ -565,6 +565,7 @@
     .solid-label { font-family: inherit; line-height: inherit; border: 0; pointer-events: auto; cursor: pointer; }
     .solid-label:hover { color: var(--fg); }
     .solid-label:focus-visible { outline: 1px solid var(--fg); outline-offset: 2px; }
+    [data-labels="hidden"] .solid-label { display: none !important; } /* the 3D labels switch: the solid alone */
     .solid-label[aria-pressed="false"] { text-decoration: line-through; color: color-mix(in srgb, var(--muted) 60%, transparent); }
     .atlas-label.solid-dot, .wheel > .solid-label.solid-dot { --dx: -50%; width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 50%; background: var(--hue); border: 1.5px solid var(--hue); }
     .atlas-label.solid-dot[aria-pressed="false"], .wheel > .solid-label.solid-dot[aria-pressed="false"] { background: var(--bg); }
@@ -5585,6 +5586,7 @@
         pressed(modes, "bg3", opt.bg);
         option("bg").hidden = view === "3d";
         option("bg3").hidden = view !== "3d";
+        showLabels(view === "3d");
       };
       function loadLook() {
         opt = prefs.load(view);
@@ -5603,6 +5605,7 @@
           caption3d();
         } else render();
       };
+      const showLabels = labelsSwitch(modes, box, saved, save);
       onChoice(modes, "wheel-slicing", setSlicing);
       for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
       onChoice(modes, "bg", (value) => choose("bg", value));
@@ -5681,15 +5684,34 @@
         ["dots", "Wada's colours as dots, each at its own place (in 3D, balls)", `${frame}<circle cx="-2.2" cy="-1.6" r="2.3" stroke="none"/><circle cx="2.7" cy="2.9" r="2.3" stroke="none"/>`],
         ["none", "Wada's colours hidden", frame],
       ];
-      return { SPACE, BG: [SMOOTH, ...GRIDS], BG3: [...SOLIDS, ...GRIDS], STRENGTH, WADA };
+      const around = (dashed) => `<circle r="3.2" stroke="none"/>` + (dashed ? `<circle r="6.2" fill="none" stroke-width="0.8" stroke-dasharray="1.6 1.6"/>`
+        : [0, 60, 120, 180, 240, 300].map((deg) => `<circle cx="${(6.2 * Math.cos((deg * Math.PI) / 180)).toFixed(2)}" cy="${(6.2 * Math.sin((deg * Math.PI) / 180)).toFixed(2)}" r="1.1" stroke="none"/>`).join(""));
+      const LABELS = [
+        ["shown", "Labels shown. The pages' names and dots round the solid, each hiding or showing its page", around(false)],
+        ["hidden", "Labels hidden. The solid alone", around(true)],
+      ];
+      return { SPACE, BG: [SMOOTH, ...GRIDS], BG3: [...SOLIDS, ...GRIDS], STRENGTH, WADA, LABELS };
     }
     // The switches' markup, in their order everywhere: space, background (2D and Flat's, and 3D's, only one
-    // shown), strength, Wada's colours. `space`: whether the system has the space switch; or, where it has
+    // shown), strength, Wada's colours, and in 3D the labels round the solid. `space`: whether the system has the space switch; or, where it has
     // none, why, and the switch is there, off, so that the others stay in their places.
     function viewSwitches(id, space = true) {
-      const { SPACE, BG, BG3, STRENGTH, WADA } = viewChoices(id);
+      const { SPACE, BG, BG3, STRENGTH, WADA, LABELS } = viewChoices(id);
       return (space ? optionSwitch("Space", "space", SPACE, space === true ? "" : space) : "") + optionSwitch("Background", "bg", BG) + optionSwitch("Background", "bg3", BG3)
-        + optionSwitch("Strength", "strength", STRENGTH) + optionSwitch("Wada's", "wada", WADA);
+        + optionSwitch("Strength", "strength", STRENGTH) + optionSwitch("Wada's", "wada", WADA) + optionSwitch("Labels", "labels", LABELS);
+    }
+    // The 3D view's labels round the solid (its pages' names, and dots for the unnamed), shown or hidden: saved
+    // once for every system (as the peel), on `box`'s data for the CSS, its switch shown in 3D only. Returns
+    // what shows the choice as saved (another system's view may have changed it), for the view's showLook.
+    function labelsSwitch(modes, box, saved, save) {
+      const show = (in3d) => {
+        const value = saved("v-3d-labels") === "hidden" ? "hidden" : "shown";
+        box.dataset.labels = value;
+        pressed(modes, "labels", value);
+        modes.querySelector('[data-option="labels"]').hidden = !in3d;
+      };
+      onChoice(modes, "labels", (value) => { save("v-3d-labels", value); show(true); });
+      return show;
     }
     // The systems share their switches' choices, the Colour systems page's apart from Create's picker's: a system's
     // view's saved choices are its own (under `prefix`: the level, the pages), but its switches' (`aliases`:
@@ -7627,6 +7649,7 @@
         pressed(modes, "bg3", opt.bg);
         modes.querySelector('[data-option="bg"]').hidden = view === "3d";
         modes.querySelector('[data-option="bg3"]').hidden = view !== "3d";
+        showLabels(view === "3d");
         if (solidLook && solidLook !== String(ballsInCells())) remake3d();
         solid?.look(opt, caption3d);
         peelControl?.show(view === "3d", peel);
@@ -7659,6 +7682,7 @@
         pressed(modes, "cut", where);
         save("cut", where);
       };
+      const showLabels = labelsSwitch(modes, box, saved, save);
       onChoice(modes, "mode", setMode);
       for (const key of ["strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
       onChoice(modes, "bg", (value) => choose("bg", value));
@@ -9135,6 +9159,7 @@
         for (const b of [...spaceOption.querySelectorAll("button"), smoothChoice]) b.disabled = tones;
         option("bg").hidden = view === "3d";
         option("bg3").hidden = view !== "3d";
+        showLabels(view === "3d");
         peelControl?.show(view === "3d", peel);
       };
       const loadLook = () => {
@@ -9152,6 +9177,7 @@
         }
         render();
       };
+      const showLabels = labelsSwitch(modes, box, saved, save);
       onChoice(modes, "mode", setMode);
       onChoice(modes, "range", setRange);
       for (const key of ["space", "strength", "wada"]) onChoice(modes, key, (value) => choose(key, value));
