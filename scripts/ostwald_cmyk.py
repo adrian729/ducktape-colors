@@ -9,11 +9,11 @@ the same Japan Color 2011 Coated profile that turns the book's CMYK into OKLCH (
 using its colorimetric table B2A1, the inverse of the A2B1 table used there. The profile's table also
 fixes how much black replaces cyan, magenta and yellow.
 
-The cells are measured against what that press prints (notes/ostwald.py, print-gamut.json), so every
+The cells are measured against what that press prints (notes/ostwald.py, gamuts/JapanColor2011Coated.json), so every
 one is printable: the estimate, printed, should come back as the cell's colour.
 
 Re-run it after changing colors.json (Wada's Orange fixes the hue's zero point), the Ostwald
-computation (notes/ostwald.py, which it imports) or print-gamut.json. It also prints how well the
+computation (notes/ostwald.py, which it imports) or gamuts/JapanColor2011Coated.json. It also prints how well the
 estimate does on Wada's own colours, whose CMYK we know.
 Standard library only.
 """

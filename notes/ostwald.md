@@ -22,9 +22,9 @@ Wada wrote colours in Ostwald's notation, and his colour-name books give every c
 
 ## Placing Wada's colours
 
-- **Against the press:** Ostwald's full colours were the purest colours his pigments made, and Wada's colours were printed. So each colour is measured against what the press prints: Japan Color 2011 Coated, the profile that turns the book's CMYK into our values (see the main README), with its ink limit of 350%. `scripts/print_gamut.py` measures it once, into `print-gamut.json`. Nothing is clipped to a screen's colours.
+- **Against the press:** Ostwald's full colours were the purest colours his pigments made, and Wada's colours were printed. So each colour is measured against what the press prints: Japan Color 2011 Coated, the profile that turns the book's CMYK into our values (see the main README), with its ink limit of 350%. `scripts/print_gamut.py` measures it once, into `gamuts/JapanColor2011Coated.json`. Nothing is clipped to a screen's colours.
 - **Hue plane:** a colour's direction from the white in CIE xy (D65), its chromaticity angle. Complements, mixed additively, give grey, so they lie in opposite directions, as Ostwald's circle has them.
-- **Full colour:** in each direction, the press's purest colour: two inks and no black, one of them at 100% and the third at 0 (magenta and yellow for an orange). `print-gamut.json` has it for every degree, and at each ink alone and each two at 100%, where the full colours turn a corner; between those, it is interpolated.
+- **Full colour:** in each direction, the press's purest colour: two inks and no black, one of them at 100% and the third at 0 (magenta and yellow for an orange). `gamuts/JapanColor2011Coated.json` has it for every degree, and at each ink alone and each two at 100%, where the full colours turn a corner; between those, it is interpolated.
 - **White, black and colour:** as on Ostwald's discs, a colour is white and its full colour mixed, then darkened with black.
   - Its share of full colour against white, r, comes from its purity, its distance from the white towards the full colour, weighted by the two's X + Y + Z, as an additive mixture of the two is.
   - Its black is how far it is below the press's tint edge: the brightest the press prints in that direction at that share (Y). black = 1 − Y / Ymax(r). A tint has none, and its shadow series, the same chromaticity darker, has more.
@@ -144,7 +144,7 @@ Wada wrote colours in Ostwald's notation, and his colour-name books give every c
 ## CMYK for the empty cells
 
 - **How:** the cell's colour goes to CIE Lab, then to CMYK through the colorimetric table (B2A1) of the Japan Color 2011 Coated profile. That is the inverse of the table that turns the book's CMYK into our values (`scripts/cmyk_to_oklch.py`). The profile also decides how much black stands in for cyan, magenta and yellow.
-- **Where it comes from:** `scripts/ostwald_cmyk.py` writes the estimates to `ostwald-cmyk.json` and prints the checks below. The page ignores the file if it was made for another calibration, so re-run the script after changing `colors.json` or `print-gamut.json`.
+- **Where it comes from:** `scripts/ostwald_cmyk.py` writes the estimates to `ostwald-cmyk.json` and prints the checks below. The page ignores the file if it was made for another calibration, so re-run the script after changing `colors.json` or `gamuts/JapanColor2011Coated.json`.
 - **Tested on Wada's 171 colours,** whose CMYK the book gives:
   - every ink is within 5 points of the book's for 102 colours, and within 10 for 126;
   - printed back through the profile, the estimate is the colour itself: within ΔE2000 2.5, median 0.33;

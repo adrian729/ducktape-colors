@@ -1,0 +1,9 @@
+Uncoated_Fogra47L_VIGC_300.icc
+
+Source: ICC Profile Registry, https://registry.color.org/profile-registry/Uncoated_Fogra47L_VIGC_300
+Provider: VIGC. Copyright X-Rite, Inc.
+Printing condition: ISO 12647-2:2004/Amd 1 offset, paper type 4 (uncoated white), TAC 300%, characterization data FOGRA47.
+SHA-256: b5b883dd85bb74a9ccf6c6660ecd85be3b7303b89fb4f6ae582d402aa82f55f1
+
+Licence (as stated on the registry page):
+This profile is made available by VIGC, with permission of X-rite, and may be used, embedded, exchanged, and shared without restriction. It may not be altered or sold without written permission of VIGC

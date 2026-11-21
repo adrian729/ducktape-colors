@@ -5,7 +5,7 @@ notes/ostwald.md. Run from anywhere:
 
     python3 notes/ostwald.py
 
-Standard library only. Reads colors.json and print-gamut.json (scripts/print_gamut.py): every colour is
+Standard library only. Reads colors.json and gamuts/JapanColor2011Coated.json (scripts/print_gamut.py): every colour is
 measured against what the press prints, Japan Color 2011 Coated, as Wada's colours were printed.
 """
 import bisect
@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from oklab import WHITE, oklab_of, oklch_of, xyz_of  # noqa: E402
 colors = json.loads((ROOT / "colors.json").read_text())
 index = {c["name"]: i for i, c in enumerate(colors)}
-PRESS = json.loads((ROOT / "print-gamut.json").read_text())["ostwald"]
+PRESS = json.loads((ROOT / "gamuts" / "JapanColor2011Coated.json").read_text())["ostwald"]
 RAYS, ANGLES, STEPS = PRESS["rays"], PRESS["angles"], PRESS["steps"]
 
 # Wada's grey scale (1935 supplement, Figure 2): 16 letters, A to P with J, from Ostwald's white (0.891
@@ -30,14 +30,14 @@ RAYS, ANGLES, STEPS = PRESS["rays"], PRESS["angles"], PRESS["steps"]
 LETTERS = "abcdefghijklmnop"
 GREYS = [0.891 * (0.0355 / 0.891) ** (k / 15) for k in range(16)]
 
-# The white is CSS's D65 (Y = 1), the white print-gamut.json measures the press against.
+# The white is CSS's D65 (Y = 1), the white the gamut files measure the press against.
 SW = sum(WHITE)
 XW, YW = WHITE[0] / SW, WHITE[1] / SW
 
 
 def between(theta):
     """The two rays either side of chromaticity angle theta (degrees round the white in xy), and how far
-    theta is from the first to the second (print-gamut.json's rays: one per degree, and one at each ink
+    theta is from the first to the second (the gamut file's rays: one per degree, and one at each ink
     alone and each two at 100%, where the full colours turn a corner)."""
     x = theta % 360
     k = bisect.bisect_right(ANGLES, x)

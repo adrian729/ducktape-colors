@@ -1,0 +1,9 @@
+Coated_Fogra39L_VIGC_300.icc
+
+Source: ICC Profile Registry, https://registry.color.org/profile-registry/Coated_Fogra39L_VIGC_300
+Provider: VIGC. Copyright X-Rite, Inc.
+Printing condition: ISO 12647-2:2004/Amd 1 offset, paper type 1 or 2 (coated art), TAC 300%, characterization data FOGRA39.
+SHA-256: 6df43849a84d2632e7900a125f657bd09364ed56775bc4740c1e39a5492d47e3
+
+Licence (as stated on the registry page):
+This profile is made available by VIGC, with permission of X-rite, and may be used, embedded, exchanged, and shared without restriction. It may not be altered or sold without written permission of VIGC

@@ -44,7 +44,7 @@ PCCS, the Practical Color Co-ordinate System (日本色研配色体系), was mad
   - the renotation has the data to interpolate it.
 - **The greys** n-1.5 to n-9.5, from ASTM D1535's value scale.
 - **Each tone's representative per hue:** 201-L's for the even hues; for the odd ones, from the tone coordinates, rounded to 0.5 as 201-L's are. All are in the grid.
-- **Ranges,** as in the OKLCH and Munsell views:
+- **Profiles,** as in the OKLCH and Munsell views, the counts for Rec. 2020 and Japan Color 2011 Coated:
   - Screen: 3,526 of the 4,086, out to s 18;
   - Print: 2,116, out to s 11 (PCCS's 9 was the pigments of 1964);
   - all 17 greys in both.

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Measure what the press can print, from its ICC profile, and store it in print-gamut.json.
+"""Measure what a press can print, from its ICC profile, and store it in gamuts/<profile>.json.
 
-    python3 scripts/print_gamut.py
+    python3 scripts/print_gamut.py [profiles/<profile>.icc]
 
-Wada's CMYK is read through Japan Color 2011 Coated (cmyk_to_oklch.py). This finds the edge of
-everything that printing condition can make, its gamut, in two forms the site uses:
+The profile defaults to Japan Color 2011 Coated, the one Wada's CMYK is read through
+(cmyk_to_oklch.py). Any CMYK output profile with 16-bit (lut16, ICC v2) A2B1 and B2A1 tables will do;
+its file goes to gamuts/ under the profile's own name (JapanColor2011Coated.icc ->
+gamuts/JapanColor2011Coated.json). This finds the edge of everything that printing condition can make,
+its gamut, in two forms the site uses:
 
 1. `chroma`: the most chroma it can print at each lightness and hue of OKLCH, for the Colors ›
    OKLCH view's Print choice (its slices' edge, and its solid's walls). Per half degree of hue, and
@@ -16,7 +19,7 @@ everything that printing condition can make, its gamut, in two forms the site us
    Between two hues the page blends their lines, at each lightness, by hue; and where that would be
    more than 0.001 off the edge halfway between them (round the corners, where the edge turns
    sharply with hue), there are more hues, down to 1/128 of a degree apart.
-2. `ostwald`: the full colours and the tint edge Ostwald's system is measured against (see
+2. `ostwald` (Japan Color 2011 Coated only, the press Ostwald's system is built on): the full colours and the tint edge Ostwald's system is measured against (see
    notes/ostwald.md), per 1° of chromaticity angle round the white (CIE 1931 xy, D65; 0° towards
    +x, anticlockwise), and at the angle of each ink alone and of each two at 100% (`angles`): the
    purest colour the press prints there, with no black and only two inks
@@ -24,11 +27,11 @@ everything that printing condition can make, its gamut, in two forms the site us
    brightest it prints at each share of that full colour against white (the tint edge: Y at a share
    of 0, 1/32, ..., 1).
 
-How: CMYK is printable within 0 to 100% per ink and at most 350% in all (the profile's own limit:
-its inverse table B2A1 prints its darkest colour with exactly that). The edge of what four inks can
+How: CMYK is printable within 0 to 100% per ink and at most the profile's total ink limit in all
+(350% for Japan Color 2011 Coated: what its inverse table B2A1 prints its darkest colour with). The edge of what four inks can
 make is where at least two of them are at a limit (0 or 100%, or the total), so it lies on the
 surfaces where two inks vary and the other two are each at 0 or 100% (24 of them), or where the
-total is 350% with one ink at 100% (4). Each is sampled every 1% through the A2B1 table, as
+total is at the limit with one ink at 100% (4). Each is sampled every 1% through the A2B1 table, as
 cmyk_to_oklch.py reads it, and cut into triangles. The edge at a lightness and hue is the furthest
 point out from the grey axis where any of those triangles meets them, found per 0.002 of lightness.
 Where the surfaces meet in a ridge (one ink varying, the other three at a limit: pure yellow, for
@@ -43,14 +46,16 @@ Standard library only. Takes a few minutes.
 import bisect
 import json
 import math
+import struct
+import sys
 from pathlib import Path
 
 import cmyk_to_oklch as cx
 from oklab import WHITE, mul, oklab_of as xyz_to_oklab
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "print-gamut.json"
-TAC = 350  # % of ink in all, at most: see check_limit()
+GAMUTS = ROOT / "gamuts"
+TAC = 350  # % of ink in all, at most: the profile's own, set by main() (see ink_limit())
 L_STEP, H_STEP = 0.002, 0.5  # the edge's search: lightness, hue (degrees)
 TOLERANCE = 0.0002  # √chroma, as the OKLCH view draws it: how far the stored line may be from the edge found
 SCALE = 100000  # the edge's points are stored as whole numbers: lightness and chroma times this
@@ -80,10 +85,18 @@ class Press:
         return self.cache[key]
 
 
-def check_limit():
-    """The profile's total ink limit: what its inverse table (B2A1) prints black with."""
+def ink_limit():
+    """The profile's total ink limit: what its inverse table (B2A1) prints black with, a whole percent."""
     total = sum(cx.lab_to_cmyk(cx.load_b2a1(), (0, 0, 0)))
-    assert abs(total - TAC) < 0.5, f"the profile prints black with {total:.1f}% of ink, not {TAC}%"
+    assert abs(total - round(total)) < 0.25, f"the profile prints black with {total:.2f}% of ink, not a whole percent"
+    return round(total)
+
+
+def description():
+    """The profile's name, from its description tag (ICC v2 textDescriptionType: ASCII after a length)."""
+    tag = cx.load_tag(b"desc")
+    (n,) = struct.unpack(">I", tag[8:12])
+    return tag[12:12 + n].rstrip(b"\0").decode("ascii")
 
 
 def ok(v):
@@ -377,26 +390,33 @@ def ostwald_rays(press):
 
 
 def main():
-    check_limit()
+    global TAC
+    if len(sys.argv) > 1:
+        cx.PROFILE = Path(sys.argv[1]).resolve()
+    out = GAMUTS / f"{cx.PROFILE.stem}.json"
+    wada = cx.PROFILE.name == "JapanColor2011Coated.icc"  # the `ostwald` part only for Wada's press, the only one it's built on
+    TAC = ink_limit()
     press = Press()
     hues, columns = edge_columns(press)
     darkest = min(p[1][0] for p in press.cache.values())
-    angles, rays = ostwald_rays(press)
+    angles, rays = ostwald_rays(press) if wada else ([], [])
     inks = {name: math.degrees(math.atan2(lab[2], lab[1])) % 360 for name, cmyk in
             (("C", (100, 0, 0, 0)), ("M", (0, 100, 0, 0)), ("Y", (0, 0, 100, 0)), ("R", (0, 100, 100, 0)),
              ("G", (100, 0, 100, 0)), ("B", (100, 100, 0, 0))) for lab in [press(cmyk)[1]]}
     col_rows = ",\n".join("[" + ",".join(f"{round(L * SCALE)},{round(C * SCALE)}" for L, C in col) + "]" for col in columns)
     ray_rows = ",\n".join(json.dumps([round(r["dF"], 6), round(r["sF"], 6), round(r["hF"], 3), [round(v, 5) for v in r["edge"]]], separators=(",", ":")) for r in rays)
-    OUT.write_text(
-        '{"profile":"Japan Color 2011 Coated, A2B1 (media-relative)","limit":%d,"darkest":%.4f,\n' % (TAC, darkest)
+    GAMUTS.mkdir(exist_ok=True)
+    out.write_text(
+        '{"profile":%s,"limit":%d,"darkest":%.4f,\n' % (json.dumps(f"{description()}, A2B1 (media-relative)"), TAC, darkest)
         + '"inks":%s,\n' % json.dumps({k: round(v, 2) for k, v in inks.items()}, separators=(",", ":"))
-        + '"chroma":{"scale":%d,"hues":%s,"columns":[\n' % (SCALE, json.dumps(hues, separators=(",", ":"))) + col_rows + "]},\n"
-        + '"ostwald":{"steps":%d,"angles":%s,"rays":[\n' % (R_STEPS, json.dumps(angles, separators=(",", ":"))) + ray_rows + "]}}\n")
+        + '"chroma":{"scale":%d,"hues":%s,"columns":[\n' % (SCALE, json.dumps(hues, separators=(",", ":"))) + col_rows + "]}"
+        + (',\n"ostwald":{"steps":%d,"angles":%s,"rays":[\n' % (R_STEPS, json.dumps(angles, separators=(",", ":"))) + ray_rows + "]}}\n" if wada else "}\n"))
     print(f"{len(press.cache)} CMYK samples; darkest lightness {darkest:.4f}")
     print(f"edge: {sum(len(c) for c in columns)} points over {len(columns)} hues; most chroma "
           f"{max(C for col in columns for _, C in col):.4f}")
-    print(f"tint edge: the largest rise in brightness as the share grows (none expected): {max(r['rise'] for r in rays):.5f}")
-    print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB)")
+    if wada:
+        print(f"tint edge: the largest rise in brightness as the share grows (none expected): {max(r['rise'] for r in rays):.5f}")
+    print(f"wrote {out.relative_to(ROOT)} ({out.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

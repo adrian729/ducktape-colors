@@ -4,6 +4,7 @@ How each system's view is built, and how Wada's colours are placed in it.
 
 ## Files
 
+- [architecture.md](architecture.md): how the page is put together (profiles, systems, shared pieces), and how to add a profile or a system.
 - [ostwald.md](ostwald.md): Wada's colours placed in Ostwald's colour system as his 1935 supplement draws it, as in the Ostwald view, and how well that fits his own data.
 - [ostwald.py](ostwald.py): the script behind ostwald.md. Run `python3 notes/ostwald.py`.
 - [munsell.md](munsell.md): Wada's colours placed in Munsell's system, as in the Munsell view, and how they were measured. Its script is `scripts/munsell.py`.
